@@ -42,9 +42,11 @@ html,body{height:100%;background:var(--g0);color:var(--ink);font-family:'Sarabun
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
 /* ── Content area ── */
-#content{flex:1;overflow:hidden;position:relative}
+#content{flex:1;overflow:hidden;position:relative;min-height:0}
 .page{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;opacity:0;pointer-events:none;transition:opacity .2s}
 .page.active{opacity:1;pointer-events:all}
+/* Map page needs overflow:hidden so canvas can fill height */
+#mapPage{overflow:hidden!important}
 
 /* ── Bottom Nav ── */
 #nav{
@@ -76,7 +78,7 @@ html,body{height:100%;background:var(--g0);color:var(--ink);font-family:'Sarabun
 .stat-val.green{color:var(--g3)}.stat-val.gold{color:var(--gold)}.stat-val.red{color:var(--red)}
 
 /* ── Map ── */
-#mapPage{display:flex;flex-direction:column}
+#mapPage{display:flex;flex-direction:column;height:100%}
 #mapToolbar{
   padding:8px 12px;background:var(--g1);border-bottom:0.5px solid var(--border);
   display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;
@@ -87,10 +89,11 @@ html,body{height:100%;background:var(--g0);color:var(--ink);font-family:'Sarabun
   font-family:'Sarabun',sans-serif;transition:all .15s;
 }
 .filter-btn.active{background:var(--g2);color:var(--ink);border-color:var(--g2)}
-#mapCanvas{flex:1;width:100%;cursor:crosshair;display:block}
+#mapCanvas{flex:1;width:100%;cursor:crosshair;display:block;min-height:0}
 #treeInfo{
   background:var(--g1);border-top:0.5px solid var(--border);
-  padding:10px 14px;flex-shrink:0;min-height:72px;
+  padding:10px 14px;flex-shrink:0;min-height:72px;max-height:120px;
+  overflow-y:auto;
 }
 #treeInfo h4{font-size:13px;font-weight:500;color:var(--g4);margin-bottom:4px}
 #treeInfo p{font-size:11px;color:var(--ink3);line-height:1.6}
@@ -469,9 +472,15 @@ function showPage(p){
   document.getElementById(pages[p]).classList.add('active');
   const nb=document.getElementById(nbIds[p]);
   if(nb) nb.classList.add('active');
-  if(p==='map') setTimeout(()=>{
-  requestAnimationFrame(()=>{ requestAnimationFrame(initMap); });
-},150);
+  if(p==='map'){
+    // Wait for page to be visible and laid out before measuring canvas
+    setTimeout(()=>{
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        initMap();
+        if(!palmData.length && API_URL) loadMapData();
+      }));
+    },200);
+  }
 }
 
 // ── Setup ──────────────────────────────────────────────────
@@ -490,8 +499,13 @@ async function loadMapData(){
   try{
     const r=await fetch(API_URL+'?action=map');
     const j=await r.json();
-    if(j.status==='ok') palmData=j.data;
-    if(cvs) drawMap();
+    if(j.status==='ok'){
+      palmData=j.data;
+      // If map is currently visible, redraw immediately
+      if(document.getElementById('mapPage').classList.contains('active') && ctx){
+        drawMap();
+      }
+    }
   }catch(e){console.log('map load err',e);}
 }
 
@@ -500,25 +514,46 @@ function initMap(){
   const page=document.getElementById('mapPage');
   const toolbar=document.getElementById('mapToolbar');
   const info=document.getElementById('treeInfo');
-  mapW=page.clientWidth;
-  mapH=page.clientHeight-toolbar.offsetHeight-info.offsetHeight;
-  cvs.width=mapW; cvs.height=mapH;
-  ctx=cvs.getContext('2d');
+
+  // Force layout flush then measure
+  const pageH = page.offsetHeight||window.innerHeight;
+  const toolH = toolbar.offsetHeight||44;
+  const infoH = info.offsetHeight||80;
+  mapW = page.offsetWidth||window.innerWidth;
+  mapH = Math.max(200, pageH - toolH - infoH);
+
+  cvs.style.width  = mapW+'px';
+  cvs.style.height = mapH+'px';
+  cvs.width  = mapW;
+  cvs.height = mapH;
+  ctx = cvs.getContext('2d');
+
   if(palmData.length) drawMap();
   else drawMapPlaceholder();
+
+  // Remove old listeners first
+  cvs.replaceWith(cvs.cloneNode(true));
+  cvs = document.getElementById('mapCanvas');
+  ctx = cvs.getContext('2d');
+  if(palmData.length) drawMap(); else drawMapPlaceholder();
+
   cvs.addEventListener('click',onMapClick);
   cvs.addEventListener('touchend',e=>{
     e.preventDefault();
     const t=e.changedTouches[0];
     const r=cvs.getBoundingClientRect();
-    onMapClick({clientX:t.clientX,clientY:t.clientY,rect:r,fromTouch:true});
+    onMapClick({clientX:t.clientX,clientY:t.clientY,rect:r});
   },{passive:false});
 }
 
 function drawMapPlaceholder(){
-  ctx.fillStyle='rgba(45,106,79,.1)';ctx.fillRect(0,0,mapW,mapH);
-  ctx.fillStyle='rgba(149,213,178,.5)';ctx.font='13px Sarabun';
-  ctx.textAlign='center';ctx.fillText('กำลังโหลดข้อมูลแผนที่...',mapW/2,mapH/2);
+  if(!ctx||!mapW||!mapH) return;
+  ctx.fillStyle='rgba(45,106,79,.12)';ctx.fillRect(0,0,mapW,mapH);
+  ctx.fillStyle='rgba(149,213,178,.6)';
+  ctx.font='14px Sarabun,sans-serif';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillText('กำลังโหลดข้อมูลแผนที่...',mapW/2,mapH/2);
 }
 
 function getMapBounds(){
