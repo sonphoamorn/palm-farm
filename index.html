@@ -469,7 +469,9 @@ function showPage(p){
   document.getElementById(pages[p]).classList.add('active');
   const nb=document.getElementById(nbIds[p]);
   if(nb) nb.classList.add('active');
-  if(p==='map') setTimeout(initMap,100);
+  if(p==='map') setTimeout(()=>{
+  requestAnimationFrame(()=>{ requestAnimationFrame(initMap); });
+},150);
 }
 
 // ── Setup ──────────────────────────────────────────────────
