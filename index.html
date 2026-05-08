@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PalmFarm">
+<meta name="theme-color" content="#2d6a4f">
+<link rel="manifest" href="manifest.json">
+<title>สวนปาล์มลุงสน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&family=Mitr:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --g0:#0b1a10;--g1:#152a1c;--g2:#2d6a4f;--g3:#52b788;--g4:#95d5b2;--g5:#d8f3dc;
+  --gold:#e9c46a;--amber:#f4a261;--red:#e76f51;--sky:#48cae4;
+  --ink:#eef4f0;--ink2:#8fbfa0;--ink3:#4a7a5a;
+  --card:rgba(21,42,28,0.92);--border:rgba(82,183,136,0.18);
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--g0);color:var(--ink);font-family:'Sarabun',sans-serif;overflow:hidden;user-select:none}
+
+/* ── Shell ── */
+#app{display:flex;flex-direction:column;height:100%;height:100dvh}
+#header{
+  padding:calc(var(--safe-top) + 10px) 16px 10px;
+  background:linear-gradient(180deg,var(--g1) 0%,rgba(21,42,28,0.95) 100%);
+  border-bottom:0.5px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+#header h1{font-family:'Mitr',sans-serif;font-size:17px;font-weight:600;color:var(--g4)}
+#header h1 span{color:var(--gold)}
+.conn-dot{width:7px;height:7px;border-radius:50%;background:#444;transition:background .3s;flex-shrink:0}
+.conn-dot.ok{background:var(--g3);box-shadow:0 0 5px var(--g3)}
+.conn-dot.err{background:var(--red)}
+.conn-dot.loading{background:var(--gold);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── Content area ── */
+#content{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;opacity:0;pointer-events:none;transition:opacity .2s}
+.page.active{opacity:1;pointer-events:all}
+
+/* ── Bottom Nav ── */
+#nav{
+  display:flex;padding:8px 0 calc(var(--safe-bot) + 6px);
+  background:var(--g1);border-top:0.5px solid var(--border);
+  flex-shrink:0;
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  border:none;background:transparent;color:var(--ink3);cursor:pointer;
+  padding:4px 0;transition:color .15s;
+}
+.nav-btn.active{color:var(--g4)}
+.nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.nav-btn span{font-size:10px;font-weight:500}
+
+/* ── Cards ── */
+.card{
+  background:var(--card);border:0.5px solid var(--border);
+  border-radius:14px;padding:14px 16px;backdrop-filter:blur(8px);
+}
+.card-title{font-family:'Mitr',sans-serif;font-size:13px;color:var(--g4);margin-bottom:10px}
+
+/* ── Stat ── */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px}
+.stat{background:rgba(45,106,79,.2);border:0.5px solid var(--border);border-radius:12px;padding:12px 14px}
+.stat-lbl{font-size:10px;color:var(--ink3);margin-bottom:4px}
+.stat-val{font-family:'Mitr',sans-serif;font-size:22px;font-weight:600}
+.stat-val.green{color:var(--g3)}.stat-val.gold{color:var(--gold)}.stat-val.red{color:var(--red)}
+
+/* ── Map ── */
+#mapPage{display:flex;flex-direction:column}
+#mapToolbar{
+  padding:8px 12px;background:var(--g1);border-bottom:0.5px solid var(--border);
+  display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;
+}
+.filter-btn{
+  padding:5px 12px;border:0.5px solid var(--border);border-radius:20px;
+  background:transparent;color:var(--ink3);font-size:11px;cursor:pointer;
+  font-family:'Sarabun',sans-serif;transition:all .15s;
+}
+.filter-btn.active{background:var(--g2);color:var(--ink);border-color:var(--g2)}
+#mapCanvas{flex:1;width:100%;cursor:crosshair;display:block}
+#treeInfo{
+  background:var(--g1);border-top:0.5px solid var(--border);
+  padding:10px 14px;flex-shrink:0;min-height:72px;
+}
+#treeInfo h4{font-size:13px;font-weight:500;color:var(--g4);margin-bottom:4px}
+#treeInfo p{font-size:11px;color:var(--ink3);line-height:1.6}
+.btn-log{
+  margin-top:8px;padding:8px 16px;background:var(--g2);color:var(--ink);
+  border:none;border-radius:8px;font-size:12px;font-family:'Sarabun',sans-serif;
+  cursor:pointer;font-weight:500;transition:background .15s;
+}
+.btn-log:active{background:var(--g3)}
+
+/* ── Form ── */
+.form-page{padding:12px}
+.form-section{margin-bottom:14px}
+.form-title{font-family:'Mitr',sans-serif;font-size:12px;color:var(--ink3);
+  letter-spacing:.5px;margin-bottom:8px;text-transform:uppercase;}
+.act-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.act-btn{
+  padding:7px 14px;border:0.5px solid var(--border);border-radius:20px;
+  background:transparent;color:var(--ink3);font-size:12px;cursor:pointer;
+  font-family:'Sarabun',sans-serif;transition:all .15s;
+}
+.act-btn.active{background:var(--g2);color:var(--ink);border-color:var(--g2)}
+label{display:block;font-size:11px;color:var(--ink3);margin-bottom:3px;margin-top:10px}
+input[type=text],input[type=number],input[type=date],select,textarea{
+  width:100%;padding:9px 12px;background:rgba(255,255,255,.06);
+  border:0.5px solid var(--border);border-radius:8px;
+  color:var(--ink);font-size:13px;font-family:'Sarabun',sans-serif;
+  -webkit-appearance:none;outline:none;
+}
+input:focus,select:focus{border-color:var(--g3)}
+select option{background:var(--g1);color:var(--ink)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.calc-box{
+  background:rgba(45,106,79,.15);border:0.5px solid rgba(82,183,136,.3);
+  border-radius:8px;padding:10px 12px;margin-top:10px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.calc-lbl{font-size:11px;color:var(--ink3)}
+.calc-val{font-family:'Mitr',sans-serif;font-size:16px;font-weight:600;color:var(--g4)}
+.hidden{display:none}
+.btn-submit{
+  width:100%;padding:13px;background:var(--g2);color:var(--ink);
+  border:none;border-radius:10px;font-size:14px;font-weight:600;
+  font-family:'Mitr',sans-serif;cursor:pointer;margin-top:14px;
+  transition:background .15s;letter-spacing:.3px;
+}
+.btn-submit:active{background:var(--g3)}
+.result-box{
+  background:rgba(0,0,0,.3);border:0.5px solid var(--border);
+  border-radius:8px;padding:10px 12px;margin-top:10px;
+  font-size:11px;font-family:monospace;color:var(--g4);
+  white-space:pre-wrap;line-height:1.6;max-height:140px;overflow-y:auto;
+}
+
+/* ── Dashboard ── */
+.dash-page{padding:12px}
+.log-item{
+  background:rgba(255,255,255,.04);border:0.5px solid var(--border);
+  border-radius:10px;padding:10px 12px;margin-bottom:8px;
+}
+.log-type{font-size:11px;font-weight:500}
+.log-type.harvest{color:var(--g4)}.log-type.fert{color:var(--gold)}
+.log-type.prune{color:var(--amber)}.log-type.maintain{color:var(--sky)}
+.log-meta{font-size:10px;color:var(--ink3);margin-top:3px}
+.log-amount{font-size:12px;font-weight:500;text-align:right}
+.log-amount.pos{color:var(--g3)}.log-amount.neg{color:var(--amber)}
+
+/* ── Setup ── */
+.setup-page{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100%;padding:24px;}
+.setup-icon{font-size:48px;margin-bottom:16px;opacity:.7}
+.setup-title{font-family:'Mitr',sans-serif;font-size:18px;color:var(--g4);margin-bottom:8px;text-align:center}
+.setup-sub{font-size:13px;color:var(--ink3);text-align:center;margin-bottom:20px;line-height:1.6}
+.setup-url{width:100%;padding:10px 12px;background:rgba(255,255,255,.06);
+  border:0.5px solid var(--border);border-radius:8px;color:var(--ink);
+  font-size:12px;font-family:monospace;outline:none;margin-bottom:10px;}
+.setup-url:focus{border-color:var(--g3)}
+.btn-save{width:100%;padding:12px;background:var(--g2);color:var(--ink);
+  border:none;border-radius:10px;font-size:14px;font-family:'Mitr',sans-serif;
+  font-weight:500;cursor:pointer;}
+.btn-save:active{background:var(--g3)}
+
+/* ── Photo ── */
+.photo-zone{
+  border:1px dashed var(--border);border-radius:8px;padding:12px;
+  text-align:center;cursor:pointer;margin-top:4px;
+  color:var(--ink3);font-size:12px;
+}
+.photo-preview{width:100%;max-height:160px;object-fit:cover;border-radius:8px;margin-top:8px;display:none}
+
+/* ── Toast ── */
+#toast{
+  position:fixed;bottom:calc(var(--safe-bot) + 70px);left:50%;transform:translateX(-50%) translateY(10px);
+  background:var(--g2);color:var(--ink);padding:9px 18px;border-radius:20px;
+  font-size:12px;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;z-index:999;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <div id="header">
+    <div>
+      <h1>🌴 สวนปาล์ม<span>ลุงสน</span></h1>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="onlineStatus" style="font-size:10px;color:var(--ink3)">—</span>
+      <div class="conn-dot" id="connDot"></div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div id="content">
+
+    <!-- Setup Page -->
+    <div class="page active" id="setupPage">
+      <div class="setup-page">
+        <div class="setup-icon">🌿</div>
+        <div class="setup-title">ตั้งค่า API</div>
+        <div class="setup-sub">ใส่ Apps Script URL<br>เพื่อเชื่อมแอปกับ Google Sheet</div>
+        <input type="url" class="setup-url" id="setupUrl"
+          placeholder="https://script.google.com/macros/s/…/exec">
+        <button class="btn-save" onclick="saveSetup()">เชื่อมต่อและเริ่มใช้งาน</button>
+      </div>
+    </div>
+
+    <!-- Map Page -->
+    <div class="page" id="mapPage">
+      <div id="mapToolbar">
+        <button class="filter-btn active" onclick="setFilter('all',this)">ทั้งหมด</button>
+        <button class="filter-btn" onclick="setFilter('A',this)">Zone A</button>
+        <button class="filter-btn" onclick="setFilter('B',this)">Zone B</button>
+        <button class="filter-btn" onclick="setFilter('repair',this)">รอซ่อม</button>
+        <button class="filter-btn" onclick="setFilter('satellite',this)">ดาวเทียม</button>
+      </div>
+      <canvas id="mapCanvas"></canvas>
+      <div id="treeInfo">
+        <h4>แตะต้นปาล์มเพื่อดูข้อมูล</h4>
+        <p>แสดงต้นปาล์มทั้งหมด · Zone A ปาล์มเล็ก และ Zone B ปาล์มใหญ่</p>
+      </div>
+    </div>
+
+    <!-- Form Page -->
+    <div class="page" id="formPage">
+      <div class="form-page" id="formInner">
+        <div id="selectedTreeBanner" class="card hidden" style="margin-bottom:12px">
+          <div style="font-size:11px;color:var(--ink3)">บันทึกสำหรับต้น</div>
+          <div id="selectedTreeName" style="font-size:15px;font-weight:500;color:var(--g4)">—</div>
+          <div id="selectedTreeZone" style="font-size:11px;color:var(--ink3)">—</div>
+        </div>
+
+        <div class="form-title">ประเภทกิจกรรม</div>
+        <div class="act-tabs">
+          <button class="act-btn active" onclick="setAct('harvest',this)">🌿 เก็บเกี่ยว</button>
+          <button class="act-btn" onclick="setAct('fertilize',this)">🌱 ใส่ปุ๋ย</button>
+          <button class="act-btn" onclick="setAct('prune',this)">✂️ ตัดแต่ง</button>
+          <button class="act-btn" onclick="setAct('maintain',this)">🔧 ดูแล</button>
+        </div>
+
+        <label>รหัสแผนงาน</label>
+        <select id="planRef" onchange="updatePlanHint()"></select>
+        <div id="planHint" style="font-size:10px;color:var(--ink3);margin-top:3px;font-style:italic"></div>
+
+        <label>โซนพื้นที่</label>
+        <select id="zone" onchange="recalc()">
+          <option value="ปาล์มเล็ก">Zone A — ปาล์มเล็ก (52 ต้น)</option>
+          <option value="ปาล์มใหญ่">Zone B — ปาล์มใหญ่ (125 ต้น)</option>
+          <option value="ทั้งหมด">ทั้งสวน (177 ต้น)</option>
+        </select>
+
+        <!-- Harvest fields -->
+        <div id="harvestF">
+          <div class="grid2">
+            <div><label>น้ำหนัก (กก.)</label><input type="number" id="hvW" placeholder="0" step="0.5" oninput="recalc()"></div>
+            <div><label>ราคา/กก.</label><input type="number" id="hvP" placeholder="8.50" step="0.25" oninput="recalc()"></div>
+          </div>
+          <div class="grid2" style="margin-top:0">
+            <div><label>ค่าแรง/กก.</label><input type="number" id="hvL" placeholder="1.00" value="1" step="0.25" oninput="recalc()"></div>
+            <div><label>ค่าใช้จ่ายอื่น</label><input type="number" id="hvO" placeholder="0" oninput="recalc()"></div>
+          </div>
+          <div class="calc-box"><span class="calc-lbl">รายได้รวม</span><span class="calc-val" id="hvRev">0 บาท</span></div>
+          <div class="calc-box" style="margin-top:6px"><span class="calc-lbl">กำไรสุทธิ</span><span class="calc-val" id="hvProfit">0 บาท</span></div>
+        </div>
+
+        <!-- Fert fields -->
+        <div id="fertilizeF" class="hidden">
+          <div class="act-tabs" id="fertTypeTabs" style="margin-top:8px">
+            <button class="act-btn active" onclick="setFertType('main',this)" style="font-size:11px">ปุ๋ยหลัก</button>
+            <button class="act-btn" onclick="setFertType('secondary',this)" style="font-size:11px">ธาตุรอง</button>
+            <button class="act-btn" onclick="setFertType('micro',this)" style="font-size:11px">ธาตุเสริม</button>
+          </div>
+          <div id="fertHint" style="font-size:10px;color:var(--ink3);margin-bottom:8px;font-style:italic;padding:6px 10px;background:rgba(255,255,255,.04);border-radius:6px;border-left:2px solid var(--g3)"></div>
+          <div class="grid2">
+            <div><label id="fzPTLbl">ปุ๋ยรอบนี้ (กก./ต้น)</label><input type="number" id="fzPT" placeholder="3" step="0.5" oninput="recalc()"></div>
+            <div><label id="fzBPLbl">ราคา (บาท/กระสอบ)</label><input type="number" id="fzBP" placeholder="850" oninput="recalc()"></div>
+          </div>
+          <div id="fzAccumWrap"><label>สะสมแล้วปีนี้ (กก./ต้น)</label><input type="number" id="fzAc" placeholder="0" step="0.5" oninput="recalc()"></div>
+          <div class="calc-box"><span class="calc-lbl">ต้นทุนปุ๋ยรอบนี้</span><span class="calc-val" id="fzCost">— บาท</span></div>
+          <div class="calc-box" style="margin-top:6px"><span class="calc-lbl">คงเหลือปีนี้</span><span class="calc-val" id="fzRemain">— กก./ต้น</span></div>
+        </div>
+
+        <!-- Prune fields -->
+        <div id="pruneF" class="hidden">
+          <div class="grid2">
+            <div><label>จำนวนต้นที่ตัด</label><input type="number" id="prT" placeholder="0" oninput="recalc()"></div>
+            <div><label>ค่าแรง/ต้น (บาท)</label><input type="number" id="prR" placeholder="15" oninput="recalc()"></div>
+          </div>
+          <div><label>ค่าอุปกรณ์/อื่น (บาท)</label><input type="number" id="prE" placeholder="0" oninput="recalc()"></div>
+          <div class="calc-box"><span class="calc-lbl">ต้นทุนรวม</span><span class="calc-val" id="prCost">— บาท</span></div>
+        </div>
+
+        <!-- Maintain fields -->
+        <div id="maintainF" class="hidden">
+          <div class="grid2">
+            <div><label>แรงงาน (คน)</label><input type="number" id="mtW" placeholder="1" oninput="recalc()"></div>
+            <div><label>ค่าแรง/คน/วัน</label><input type="number" id="mtD" placeholder="350" oninput="recalc()"></div>
+          </div>
+          <div class="grid2">
+            <div><label>จำนวนวัน</label><input type="number" id="mtDy" placeholder="1" value="1" oninput="recalc()"></div>
+            <div><label>ค่าวัสดุ (บาท)</label><input type="number" id="mtM" placeholder="0" oninput="recalc()"></div>
+          </div>
+          <div class="calc-box"><span class="calc-lbl">ต้นทุนรวม</span><span class="calc-val" id="mtCost">— บาท</span></div>
+        </div>
+
+        <div style="margin-top:12px;border-top:0.5px solid var(--border);padding-top:10px">
+          <div class="grid2">
+            <div><label>ผู้บันทึก</label><input type="text" id="worker" value="สน" placeholder="ชื่อ"></div>
+            <div><label>วันที่</label><input type="date" id="actDate"></div>
+          </div>
+          <label>หมายเหตุ</label>
+          <input type="text" id="noteField" placeholder="บันทึกเพิ่มเติม">
+
+          <label>รูปภาพหน้างาน</label>
+          <div class="photo-zone" onclick="document.getElementById('photoInput').click()">
+            <span>📷 แตะเพื่อถ่ายรูปหรือเลือกไฟล์</span>
+            <img id="photoPreview" class="photo-preview">
+          </div>
+          <input type="file" id="photoInput" accept="image/*" capture="environment"
+            style="display:none" onchange="previewPhoto(this)">
+        </div>
+
+        <button class="btn-submit" onclick="doPost()">บันทึกลง Google Sheet</button>
+        <div id="postResult" class="result-box" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- Dashboard Page -->
+    <div class="page" id="dashPage">
+      <div class="dash-page">
+        <div id="statsGrid" class="stat-grid">
+          <div class="stat"><div class="stat-lbl">รายได้รวม</div><div class="stat-val green" id="ds_rev">—</div></div>
+          <div class="stat"><div class="stat-lbl">กำไรสุทธิ</div><div class="stat-val" id="ds_profit">—</div></div>
+          <div class="stat"><div class="stat-lbl">ผลผลิตรวม</div><div class="stat-val gold" id="ds_wt">—</div></div>
+          <div class="stat"><div class="stat-lbl">บันทึก</div><div class="stat-val" id="ds_cnt">—</div></div>
+        </div>
+        <div style="margin:0 12px">
+          <div class="card-title" style="margin-top:4px;font-family:'Mitr',sans-serif;font-size:12px;color:var(--ink3)">กิจกรรมล่าสุด</div>
+          <div id="logList"><div style="text-align:center;padding:20px;color:var(--ink3);font-size:13px">โหลดข้อมูล...</div></div>
+        </div>
+        <div style="text-align:center;padding:12px">
+          <button onclick="loadDash()" style="padding:8px 20px;border:0.5px solid var(--border);border-radius:20px;background:transparent;color:var(--ink3);font-size:12px;cursor:pointer;font-family:'Sarabun',sans-serif">↻ รีเฟรช</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav id="nav">
+    <button class="nav-btn" id="nb-map" onclick="showPage('map')">
+      <svg viewBox="0 0 24 24"><path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3V7z"/><path d="M9 4v13M15 7v13"/></svg>
+      <span>แผนที่</span>
+    </button>
+    <button class="nav-btn active" id="nb-form" onclick="showPage('form')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12h8M8 8h8M8 16h5"/></svg>
+      <span>บันทึก</span>
+    </button>
+    <button class="nav-btn" id="nb-dash" onclick="showPage('dash')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
+      <span>รายงาน</span>
+    </button>
+    <button class="nav-btn" id="nb-setup" onclick="showPage('setup')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <span>ตั้งค่า</span>
+    </button>
+  </nav>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Constants ──────────────────────────────────────────────
+const ZONE_TREES={ปาล์มเล็ก:52,ปาล์มใหญ่:125,ทั้งหมด:177};
+const FERT_ANNUAL=9, FERT_BAG=50;
+const TYPE_LABELS={harvest:'เก็บเกี่ยว',fertilize:'ใส่ปุ๋ย',prune:'ตัดแต่งทางใบ',maintain:'ดูแลพื้นที่'};
+const FERT_TYPES={
+  main:{hint:'สูตร 15-15-15/13-13-21/14-4-24 · เป้า 9 กก./ต้น/ปี',bagKg:50,ptLbl:'ปุ๋ยรอบนี้ (กก./ต้น)',bpLbl:'ราคา (บาท/กระสอบ 50กก.)'},
+  secondary:{hint:'แมกนีเซียม/กำมะถัน/โดโลไมท์ · 1-3 กก./ต้น',bagKg:25,ptLbl:'ปริมาณ (กก./ต้น)',bpLbl:'ราคา (บาท/ถุง 25กก.)'},
+  micro:{hint:'โบรอน/สังกะสี · 0.1-0.2 กก./ต้น',bagKg:10,ptLbl:'ปริมาณ (กก./ต้น)',bpLbl:'ราคา (บาท/ถุง 10กก.)'}
+};
+const PLANS={
+  harvest:[
+    {val:'HV-99-S',label:'HV-99-S เก็บเกี่ยว Zone A',hint:'คัดลูกร่วง 1-2 ลูก'},
+    {val:'HV-99-L',label:'HV-99-L เก็บเกี่ยว Zone B',hint:'ใช้เคียวด้ามยาว'},
+    {val:'HV-99-ALL',label:'HV-99-ALL เก็บเกี่ยวทั้งหมด',hint:'รวม Zone A+B'},
+  ],
+  fertilize:[
+    {val:'FZ-05-S',label:'FZ-05-S Zone A พ.ค.',hint:'15-15-15'},
+    {val:'FZ-05-L',label:'FZ-05-L Zone B พ.ค.',hint:'14-4-24'},
+    {val:'FZ-08-S',label:'FZ-08-S Zone A ส.ค.',hint:'15-15-15'},
+    {val:'FZ-08-L',label:'FZ-08-L Zone B ส.ค.',hint:'14-4-24'},
+    {val:'FZ-10-S',label:'FZ-10-S Zone A ต.ค.',hint:'13-13-21'},
+    {val:'FZ-10-L',label:'FZ-10-L Zone B ต.ค.',hint:'0-0-60'},
+    {val:'FZ-06-A',label:'FZ-06-A แมกนีเซียม',hint:'Kieserite 1 กก./ต้น'},
+    {val:'FZ-06-B',label:'FZ-06-B กำมะถัน',hint:'Sulphur 0.5-1 กก./ต้น'},
+    {val:'FZ-06-C',label:'FZ-06-C โดโลไมท์',hint:'2-3 กก./ต้น'},
+    {val:'FZ-07-A',label:'FZ-07-A โบรอน',hint:'0.1 กก./ต้น'},
+    {val:'FZ-ALL',label:'FZ-ALL ใส่ปุ๋ยทั้งหมด',hint:'รวม Zone A+B'},
+  ],
+  prune:[
+    {val:'MT-99-S',label:'MT-99-S ตัดแต่ง Zone A',hint:'เหลือ 1-2 ใบ'},
+    {val:'MT-99-L',label:'MT-99-L ตัดแต่ง Zone B',hint:'เหลือ 1-2 ใบ'},
+    {val:'MT-99-ALL',label:'MT-99-ALL ตัดแต่งทั้งสวน',hint:'รวม Zone A+B'},
+  ],
+  maintain:[
+    {val:'MT-01-A',label:'MT-01-A ตัดหญ้า',hint:'ทุก 3 เดือน'},
+    {val:'MT-02-A',label:'MT-02-A กำจัดหญ้าสารเคมี',hint:'ระวังโคนต้น'},
+    {val:'MT-03-A',label:'MT-03-A ซ่อมทางน้ำ',hint:'ตรวจฤดูฝน'},
+    {val:'MT-04-A',label:'MT-04-A ลอกคลอง',hint:'ก่อนฤดูฝน'},
+    {val:'MT-05-A',label:'MT-05-A ปลูกซ่อม',hint:'เลือกพันธุ์เดิม'},
+  ],
+};
+
+// ── State ──────────────────────────────────────────────────
+let API_URL=localStorage.getItem('palmApiUrl')||'';
+let currentAct='harvest', currentFertType='main';
+let palmData=[], mapFilter='all', selectedTree=null;
+let cvs, ctx, mapW=0, mapH=0;
+let selectedTreeForForm=null;
+
+// ── Init ──────────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  document.getElementById('actDate').value=new Date().toISOString().split('T')[0];
+  if('serviceWorker' in navigator)
+    navigator.serviceWorker.register('./sw.js');
+  setPlanOptions('harvest');
+  updateFertHint();
+  if(API_URL){
+    document.getElementById('setupUrl').value=API_URL;
+    showPage('form');
+    loadMapData();
+    loadDash();
+  } else {
+    showPage('setup');
+  }
+  window.addEventListener('online',()=>setConn(true));
+  window.addEventListener('offline',()=>setConn(false));
+  setConn(navigator.onLine);
+});
+
+function setConn(ok){
+  const d=document.getElementById('connDot');
+  const s=document.getElementById('onlineStatus');
+  d.className='conn-dot '+(ok?'ok':'err');
+  s.textContent=ok?'ออนไลน์':'ออฟไลน์';
+}
+
+// ── Navigation ─────────────────────────────────────────────
+function showPage(p){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
+  const pages={setup:'setupPage',map:'mapPage',form:'formPage',dash:'dashPage'};
+  const nbIds={map:'nb-map',form:'nb-form',dash:'nb-dash',setup:'nb-setup'};
+  document.getElementById(pages[p]).classList.add('active');
+  const nb=document.getElementById(nbIds[p]);
+  if(nb) nb.classList.add('active');
+  if(p==='map') setTimeout(initMap,100);
+}
+
+// ── Setup ──────────────────────────────────────────────────
+function saveSetup(){
+  const u=document.getElementById('setupUrl').value.trim();
+  if(!u){toast('กรุณาใส่ URL');return;}
+  API_URL=u; localStorage.setItem('palmApiUrl',u);
+  toast('✓ บันทึกแล้ว');
+  showPage('form');
+  loadMapData(); loadDash();
+}
+
+// ── Map ────────────────────────────────────────────────────
+async function loadMapData(){
+  if(!API_URL)return;
+  try{
+    const r=await fetch(API_URL+'?action=map');
+    const j=await r.json();
+    if(j.status==='ok') palmData=j.data;
+    if(cvs) drawMap();
+  }catch(e){console.log('map load err',e);}
+}
+
+function initMap(){
+  cvs=document.getElementById('mapCanvas');
+  const page=document.getElementById('mapPage');
+  const toolbar=document.getElementById('mapToolbar');
+  const info=document.getElementById('treeInfo');
+  mapW=page.clientWidth;
+  mapH=page.clientHeight-toolbar.offsetHeight-info.offsetHeight;
+  cvs.width=mapW; cvs.height=mapH;
+  ctx=cvs.getContext('2d');
+  if(palmData.length) drawMap();
+  else drawMapPlaceholder();
+  cvs.addEventListener('click',onMapClick);
+  cvs.addEventListener('touchend',e=>{
+    e.preventDefault();
+    const t=e.changedTouches[0];
+    const r=cvs.getBoundingClientRect();
+    onMapClick({clientX:t.clientX,clientY:t.clientY,rect:r,fromTouch:true});
+  },{passive:false});
+}
+
+function drawMapPlaceholder(){
+  ctx.fillStyle='rgba(45,106,79,.1)';ctx.fillRect(0,0,mapW,mapH);
+  ctx.fillStyle='rgba(149,213,178,.5)';ctx.font='13px Sarabun';
+  ctx.textAlign='center';ctx.fillText('กำลังโหลดข้อมูลแผนที่...',mapW/2,mapH/2);
+}
+
+function getMapBounds(){
+  let points=palmData.filter(p=>p.Zone!=='Other');
+  if(!points.length)return null;
+  const lats=points.map(p=>+p.Latitude);
+  const lons=points.map(p=>+p.Longitude);
+  return{minLat:Math.min(...lats),maxLat:Math.max(...lats),
+         minLon:Math.min(...lons),maxLon:Math.max(...lons)};
+}
+
+function toXY(lat,lon,b){
+  const pad=0.06;
+  const dLon=b.maxLon-b.minLon||.001, dLat=b.maxLat-b.minLat||.001;
+  const x=(lon-b.minLon)/dLon*(mapW*(1-2*pad))+mapW*pad;
+  const y=(1-(lat-b.minLat)/dLat)*(mapH*(1-2*pad))+mapH*pad;
+  return{x,y};
+}
+
+function ptColor(p){
+  if(p.Status==='รอปลูกซ่อม') return '#e76f51';
+  if(p.Type==='Manual Point')  return '#6c757d';
+  if(p.Type==='Actual (H)')    return '#52b788';
+  if(p.Type==='Actual (T)')    return '#e9c46a';
+  if(p.Type==='Generated')     return '#1d9e75';
+  return '#95d5b2';
+}
+
+function isVisible(p){
+  if(mapFilter==='all'||mapFilter==='satellite') return true;
+  if(mapFilter==='A') return p.Zone==='A';
+  if(mapFilter==='B') return p.Zone==='B';
+  if(mapFilter==='repair') return p.Status==='รอปลูกซ่อม';
+  return true;
+}
+
+function drawMap(){
+  ctx.clearRect(0,0,mapW,mapH);
+  const bg=mapFilter==='satellite'?'#2d4a38':'#1a3326';
+  ctx.fillStyle=bg; ctx.fillRect(0,0,mapW,mapH);
+  const b=getMapBounds();
+  if(!b)return;
+
+  // Zone backgrounds
+  const apts=palmData.filter(p=>p.Zone==='A');
+  const bpts=palmData.filter(p=>p.Zone==='B');
+  drawZoneBg(apts,b,'rgba(82,183,136,.08)');
+  drawZoneBg(bpts,b,'rgba(45,106,79,.08)');
+
+  palmData.forEach((p,i)=>{
+    if(!isVisible(p))return;
+    const {x,y}=toXY(+p.Latitude,+p.Longitude,b);
+    const r=p.Type==='Manual Point'?5:4;
+    const isSel=selectedTree===i;
+
+    if(isSel){
+      ctx.beginPath();ctx.arc(x,y,r+5,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,.15)';ctx.fill();
+    }
+
+    if(p.Type==='Manual Point'){
+      ctx.fillStyle=ptColor(p);
+      ctx.fillRect(x-r,y-r,r*2,r*2);
+    } else {
+      ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+      ctx.fillStyle=ptColor(p);ctx.fill();
+    }
+
+    if(isSel){
+      ctx.beginPath();ctx.arc(x,y,r+3,0,Math.PI*2);
+      ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+    }
+  });
+
+  // Zone labels
+  ctx.font='bold 11px Sarabun';ctx.textAlign='center';
+  if(apts.length){
+    const ac=centroid(apts,b);
+    ctx.fillStyle='rgba(149,213,178,.5)';
+    ctx.fillText('Zone A',ac.x,ac.y-14);
+  }
+  if(bpts.length){
+    const bc=centroid(bpts,b);
+    ctx.fillStyle='rgba(233,196,106,.5)';
+    ctx.fillText('Zone B',bc.x,bc.y-14);
+  }
+}
+
+function drawZoneBg(pts,b,color){
+  if(pts.length<3)return;
+  const mapped=pts.map(p=>toXY(+p.Latitude,+p.Longitude,b));
+  const hull=convexHull(mapped);
+  ctx.beginPath();
+  hull.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+  ctx.closePath();ctx.fillStyle=color;ctx.fill();
+}
+
+function centroid(pts,b){
+  const coords=pts.map(p=>toXY(+p.Latitude,+p.Longitude,b));
+  const x=coords.reduce((s,c)=>s+c.x,0)/coords.length;
+  const y=coords.reduce((s,c)=>s+c.y,0)/coords.length;
+  return{x,y};
+}
+
+function convexHull(pts){
+  if(pts.length<3)return pts;
+  pts.sort((a,b)=>a.x-b.x||a.y-b.y);
+  const cross=(o,a,b)=>(a.x-o.x)*(b.y-o.y)-(a.y-o.y)*(b.x-o.x);
+  const lower=[];
+  for(const p of pts){
+    while(lower.length>=2&&cross(lower[lower.length-2],lower[lower.length-1],p)<=0)lower.pop();
+    lower.push(p);
+  }
+  const upper=[];
+  for(let i=pts.length-1;i>=0;i--){
+    const p=pts[i];
+    while(upper.length>=2&&cross(upper[upper.length-2],upper[upper.length-1],p)<=0)upper.pop();
+    upper.push(p);
+  }
+  upper.pop();lower.pop();
+  return lower.concat(upper);
+}
+
+function onMapClick(e){
+  const r=cvs.getBoundingClientRect();
+  const mx=e.clientX-r.left, my=e.clientY-r.top;
+  const b=getMapBounds();
+  if(!b)return;
+  let best=null,bestD=30;
+  palmData.forEach((p,i)=>{
+    if(!isVisible(p))return;
+    const {x,y}=toXY(+p.Latitude,+p.Longitude,b);
+    const d=Math.hypot(mx-x,my-y);
+    if(d<bestD){bestD=d;best=i;}
+  });
+  selectedTree=best;
+  drawMap();
+  const info=document.getElementById('treeInfo');
+  if(best!==null){
+    const p=palmData[best];
+    if(p.Type==='Manual Point'){
+      info.innerHTML=`<h4>${p['Marker Name']||p.name||'จุดอ้างอิง'}</h4><p>จุดอ้างอิงสวน · ${(+p.Latitude).toFixed(6)}, ${(+p.Longitude).toFixed(6)}</p>`;
+    } else {
+      const nm=p['Marker Name']||p.name||'—';
+      const zone=p.Zone||'—', row=p.Row||'—', status=p.Status||'—';
+      info.innerHTML=`
+        <h4>${nm}</h4>
+        <p>Zone ${zone} · แถว ${row} · ${p.Type||''} · <strong style="color:${status==='รอปลูกซ่อม'?'#e76f51':'#52b788'}">${status}</strong></p>
+        <button class="btn-log" onclick="openFormForTree(${best})">📝 บันทึกงานต้นนี้</button>`;
+    }
+  } else {
+    info.innerHTML='<h4>แตะต้นปาล์มเพื่อดูข้อมูล</h4><p>แสดงต้นปาล์มทั้งหมด · Zone A และ Zone B</p>';
+  }
+}
+
+function openFormForTree(idx){
+  const p=palmData[idx];
+  selectedTreeForForm={name:p['Marker Name']||p.name,zone:p.Zone,idx};
+  const banner=document.getElementById('selectedTreeBanner');
+  document.getElementById('selectedTreeName').textContent=p['Marker Name']||p.name||'—';
+  document.getElementById('selectedTreeZone').textContent='Zone '+(p.Zone||'—')+' · แถว '+(p.Row||'—');
+  banner.classList.remove('hidden');
+  // Auto-set zone dropdown
+  const zoneMap={'A':'ปาล์มเล็ก','B':'ปาล์มใหญ่'};
+  const zoneVal=zoneMap[p.Zone]||'ทั้งหมด';
+  document.getElementById('zone').value=zoneVal;
+  showPage('form');
+}
+
+function setFilter(f,btn){
+  mapFilter=f;selectedTree=null;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  drawMap();
+  document.getElementById('treeInfo').innerHTML='<h4>แตะต้นปาล์มเพื่อดูข้อมูล</h4><p>กรองแล้ว: '+f+'</p>';
+}
+
+// ── Form Logic ─────────────────────────────────────────────
+function setPlanOptions(act){
+  const sel=document.getElementById('planRef');
+  sel.innerHTML=PLANS[act].map(p=>`<option value="${p.val}" data-hint="${p.hint}">${p.label}</option>`).join('');
+  updatePlanHint();
+}
+
+function updatePlanHint(){
+  const sel=document.getElementById('planRef');
+  const opt=sel.options[sel.selectedIndex];
+  document.getElementById('planHint').textContent=opt?opt.dataset.hint:'';
+}
+
+function setAct(act,btn){
+  currentAct=act;
+  document.querySelectorAll('.act-btn:not(#fertTypeTabs .act-btn)').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  setPlanOptions(act);
+  ['harvestF','fertilizeF','pruneF','maintainF'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById(act==='harvest'?'harvestF':act==='fertilize'?'fertilizeF':act==='prune'?'pruneF':'maintainF').classList.remove('hidden');
+  recalc();
+}
+
+function setFertType(type,btn){
+  currentFertType=type;
+  document.querySelectorAll('#fertTypeTabs .act-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const ft=FERT_TYPES[type];
+  document.getElementById('fertHint').textContent=ft.hint;
+  document.getElementById('fzPTLbl').textContent=ft.ptLbl;
+  document.getElementById('fzBPLbl').textContent=ft.bpLbl;
+  document.getElementById('fzAccumWrap').style.display=type==='main'?'':'none';
+  ['fzPT','fzBP','fzAc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  // Filter plan options
+  const fertPlans=PLANS.fertilize;
+  const typeMap={main:p=>p.val.startsWith('FZ-0')||p.val==='FZ-ALL',
+    secondary:p=>['FZ-06-A','FZ-06-B','FZ-06-C'].includes(p.val),
+    micro:p=>['FZ-07-A','FZ-07-B','FZ-07-C'].includes(p.val)};
+  const sel=document.getElementById('planRef');
+  sel.innerHTML=fertPlans.filter(typeMap[type]).map(p=>`<option value="${p.val}" data-hint="${p.hint}">${p.label}</option>`).join('');
+  updatePlanHint();
+  recalc();
+}
+
+function updateFertHint(){
+  const ft=FERT_TYPES[currentFertType];
+  document.getElementById('fertHint').textContent=ft.hint;
+}
+
+function n(id){return parseFloat(document.getElementById(id)?.value)||0;}
+function thb(v){return v.toLocaleString('th-TH',{maximumFractionDigits:0})+' บาท';}
+
+function recalc(){
+  const zone=document.getElementById('zone')?.value||'ทั้งหมด';
+  const trees=ZONE_TREES[zone]||0;
+  if(currentAct==='harvest'){
+    const rev=n('hvW')*n('hvP'), labor=n('hvW')*n('hvL'), profit=rev-labor-n('hvO');
+    const el=document.getElementById('hvRev');if(el)el.textContent=thb(rev);
+    const ep=document.getElementById('hvProfit');if(ep){ep.textContent=thb(profit);ep.style.color=profit>=0?'var(--g4)':'var(--red)';}
+  } else if(currentAct==='fertilize'){
+    const ft=FERT_TYPES[currentFertType];
+    const bags=Math.ceil((n('fzPT')*trees)/ft.bagKg);
+    const cost=bags*n('fzBP');
+    const remain=currentFertType==='main'?Math.max(0,FERT_ANNUAL-n('fzAc')-n('fzPT')):null;
+    const ec=document.getElementById('fzCost');if(ec)ec.textContent=cost>0?thb(cost):'— บาท';
+    const er=document.getElementById('fzRemain');
+    if(er)er.textContent=remain!==null?(remain.toFixed(1)+' กก./ต้น'):'—';
+  } else if(currentAct==='prune'){
+    const cost=n('prT')*n('prR')+n('prE');
+    const ec=document.getElementById('prCost');if(ec)ec.textContent=cost>0?thb(cost):'— บาท';
+  } else {
+    const cost=n('mtW')*n('mtD')*(n('mtDy')||1)+n('mtM');
+    const ec=document.getElementById('mtCost');if(ec)ec.textContent=cost>0?thb(cost):'— บาท';
+  }
+}
+
+// ── Photo ──────────────────────────────────────────────────
+function previewPhoto(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=document.getElementById('photoPreview');
+    img.src=e.target.result;img.style.display='block';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function uploadPhotoIfAny(logId){
+  const input=document.getElementById('photoInput');
+  if(!input.files.length)return null;
+  const file=input.files[0];
+  return new Promise(resolve=>{
+    const reader=new FileReader();
+    reader.onload=async e=>{
+      const base64=e.target.result.split(',')[1];
+      try{
+        const res=await fetch(API_URL,{method:'POST',body:JSON.stringify({
+          action:'uploadPhoto',logId,base64,mimeType:file.type,
+          fileName:file.name.replace(/\.[^/.]+$/,'')+'-'+logId
+        })});
+        resolve(await res.json());
+      }catch(err){resolve({error:err.message});}
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── POST ───────────────────────────────────────────────────
+async function doPost(){
+  if(!API_URL){toast('กรุณาตั้งค่า URL ก่อน');showPage('setup');return;}
+  const zone=document.getElementById('zone').value;
+  const trees=ZONE_TREES[zone]||0;
+  const ft=FERT_TYPES[currentFertType];
+  let revenue=0,cost=0,profit=0,extraNote='';
+
+  if(currentAct==='harvest'){
+    const w=n('hvW'),p=n('hvP'),lr=n('hvL'),oth=n('hvO');
+    revenue=w*p;cost=w*lr+oth;profit=revenue-cost;
+    extraNote=`ค่าแรง ${thb(w*lr)}`;
+  } else if(currentAct==='fertilize'){
+    const bags=Math.ceil((n('fzPT')*trees)/ft.bagKg);
+    cost=bags*n('fzBP');
+    const remain=currentFertType==='main'?Math.max(0,FERT_ANNUAL-n('fzAc')-n('fzPT')):null;
+    extraNote=`[${ft.hint.split('·')[0].trim()}] ${n('fzPT')} กก./ต้น`+(remain!==null?` คงเหลือ ${remain.toFixed(1)} กก.`:'');
+  } else if(currentAct==='prune'){
+    cost=n('prT')*n('prR')+n('prE');
+    extraNote=`ตัด ${n('prT')} ต้น`;
+  } else {
+    cost=n('mtW')*n('mtD')*(n('mtDy')||1)+n('mtM');
+    extraNote=`${n('mtW')} คน × ${n('mtDy')||1} วัน`;
+  }
+
+  const body={
+    action:'addLog',
+    data:{
+      'ประเภทกิจกรรม':TYPE_LABELS[currentAct],
+      'รหัสแผนงาน (Plan_Ref)':document.getElementById('planRef').value,
+      'โซนพื้นที่':zone,
+      'น้ำหนักที่ได้จริง (กก.)':currentAct==='harvest'?n('hvW'):0,
+      'ราคาขายต่อหน่วย':currentAct==='harvest'?n('hvP'):0,
+      'รายได้รวม (จริง)':revenue,
+      'ต้นทุนที่จ่ายจริง':cost,
+      'กำไรสุทธิรอบนี้':profit,
+      'ปุ๋ย (กก./ต้น) รอบนี้':currentAct==='fertilize'?n('fzPT'):0,
+      'ปุ๋ยสะสมแล้ว (กก./ต้น)':currentAct==='fertilize'?(n('fzAc')+n('fzPT')):0,
+      'ปุ๋ยคงเหลือ (กก./ต้น)':currentAct==='fertilize'&&currentFertType==='main'?Math.max(0,FERT_ANNUAL-n('fzAc')-n('fzPT')):0,
+      'กระสอบปุ๋ยที่ใช้':currentAct==='fertilize'?Math.ceil((n('fzPT')*trees)/ft.bagKg):0,
+      'จำนวนต้นที่ตัดแต่ง':currentAct==='prune'?n('prT'):0,
+      'ค่าแรง/ต้น (บาท)':currentAct==='prune'?n('prR'):0,
+      'จำนวนแรงงาน (คน)':currentAct==='maintain'?n('mtW'):0,
+      'จำนวนวัน':currentAct==='maintain'?(n('mtDy')||1):0,
+      'ค่าแรง/คน/วัน (บาท)':currentAct==='maintain'?n('mtD'):0,
+      'ค่าวัสดุ/สารเคมี':currentAct==='maintain'?n('mtM'):0,
+      'ผู้บันทึก/คนงาน':document.getElementById('worker').value,
+      'วันที่ดำเนินการ':document.getElementById('actDate').value,
+      'หมายเหตุ/รูปภาพ':[
+        document.getElementById('noteField').value,
+        extraNote,
+        selectedTreeForForm?`ต้น: ${selectedTreeForForm.name}`:''
+      ].filter(Boolean).join(' | '),
+    }
+  };
+
+  const resultEl=document.getElementById('postResult');
+  resultEl.style.display='block';
+  resultEl.textContent='กำลังบันทึก...';
+  toast('กำลังส่งข้อมูล...');
+
+  try{
+    const res=await fetch(API_URL,{method:'POST',body:JSON.stringify(body)});
+    const json=await res.json();
+    if(json.status==='ok'){
+      let msg=`✅ บันทึกสำเร็จ\nLog ID: ${json.logId}`;
+      if(revenue) msg+=`\nรายได้: ฿${revenue.toLocaleString('th-TH')}`;
+      if(cost)    msg+=`\nต้นทุน: ฿${cost.toLocaleString('th-TH')}`;
+      if(currentAct==='harvest') msg+=`\nกำไร: ฿${profit.toLocaleString('th-TH')}`;
+      resultEl.textContent=msg;
+      toast('✅ บันทึกสำเร็จ!');
+      // Upload photo
+      const pi=document.getElementById('photoInput');
+      if(pi.files.length){
+        resultEl.textContent+='\n📷 กำลังอัปโหลดรูป...';
+        const pr=await uploadPhotoIfAny(json.logId);
+        if(pr?.status==='ok') resultEl.textContent+=`\n✅ รูปภาพ: ${pr.folder}`;
+        pi.value='';
+        document.getElementById('photoPreview').style.display='none';
+      }
+      // Reset selected tree
+      selectedTreeForForm=null;
+      document.getElementById('selectedTreeBanner').classList.add('hidden');
+      loadDash();
+    } else {
+      resultEl.textContent='Error: '+(json.error||'unknown');
+      toast('❌ เกิดข้อผิดพลาด');
+    }
+  }catch(e){
+    resultEl.textContent='Error: '+e.message;
+    toast('❌ '+e.message.slice(0,30));
+  }
+}
+
+// ── Dashboard ──────────────────────────────────────────────
+async function loadDash(){
+  if(!API_URL)return;
+  const connDot=document.getElementById('connDot');
+  connDot.className='conn-dot loading';
+  try{
+    const [sr,lr]=await Promise.all([
+      fetch(API_URL+'?action=summary').then(r=>r.json()),
+      fetch(API_URL+'?action=logs').then(r=>r.json()),
+    ]);
+    connDot.className='conn-dot ok';
+    if(sr.status==='ok') renderStats(sr.summary);
+    if(lr.status==='ok') renderLogs(lr.data);
+  }catch(e){
+    connDot.className='conn-dot err';
+    document.getElementById('logList').innerHTML=`<div style="text-align:center;padding:20px;color:var(--red);font-size:12px">เชื่อมต่อไม่ได้</div>`;
+  }
+}
+
+function renderStats(s){
+  const profit=(s.totalRevenue||0)-(s.totalCost||0);
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('ds_rev','฿'+thb2(s.totalRevenue||0));
+  set('ds_profit','฿'+thb2(profit));
+  set('ds_wt',(s.totalWeight||0).toLocaleString('th-TH')+' กก.');
+  set('ds_cnt',(s.recordCount||0)+' รายการ');
+  document.getElementById('ds_profit').style.color=profit>=0?'var(--g3)':'var(--red)';
+}
+
+function thb2(v){return v.toLocaleString('th-TH',{maximumFractionDigits:0});}
+
+function renderLogs(data){
+  if(!data?.length){
+    document.getElementById('logList').innerHTML='<div style="text-align:center;padding:20px;color:var(--ink3);font-size:12px">ยังไม่มีบันทึก</div>';
+    return;
+  }
+  const sorted=[...data].sort((a,b)=>new Date(b['วันที่ดำเนินการ'])-new Date(a['วันที่ดำเนินการ'])).slice(0,15);
+  const typeClass={เก็บเกี่ยว:'harvest',ใส่ปุ๋ย:'fert',ตัดแต่งทางใบ:'prune',ดูแลพื้นที่:'maintain'};
+  document.getElementById('logList').innerHTML=sorted.map(r=>{
+    const type=r['ประเภทกิจกรรม']||'';
+    const rev=parseFloat(r['รายได้รวม (จริง)'])||0;
+    const cost=parseFloat(r['ต้นทุนที่จ่ายจริง'])||0;
+    const wt=parseFloat(r['น้ำหนักที่ได้จริง (กก.)'])||0;
+    const isHarv=type==='เก็บเกี่ยว';
+    const amtHtml=isHarv&&rev>0?`<div class="log-amount pos">฿${thb2(rev)}</div>`:cost>0?`<div class="log-amount neg">฿${thb2(cost)}</div>`:'';
+    return `<div class="log-item">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="log-type ${typeClass[type]||''}">${type}</div>
+          <div class="log-meta">${r['วันที่ดำเนินการ']||'—'} · ${r['โซนพื้นที่']||'—'} · ${r['รหัสแผนงาน (Plan_Ref)']||''}</div>
+          ${wt&&isHarv?`<div style="font-size:10px;color:var(--ink3)">${wt.toLocaleString('th-TH')} กก.</div>`:''}
+        </div>
+        ${amtHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Toast ──────────────────────────────────────────────────
+let toastTimer;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2500);
+}
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
