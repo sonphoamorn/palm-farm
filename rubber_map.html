@@ -2,142 +2,202 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>🌿 แผนที่สวนยางพารา — สวนลุงสน</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>🌿 แผนที่สวนยางพารา</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500&family=Mitr:wght@500;600&display=swap" rel="stylesheet">
 <style>
-  *{box-sizing:border-box;margin:0;padding:0;font-family:'Sarabun',sans-serif}
-  body{background:#1a3326;color:#e0e0e0;height:100dvh;display:flex;flex-direction:column}
-  #header{background:#0d1f16;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #2d6a4f}
-  #header h1{font-size:15px;color:#95d5b2;flex:1}
-  #stats{font-size:11px;color:#74c69d;text-align:right;line-height:1.5}
-  #map{flex:1;z-index:1}
-  #filter{background:#0d1f16;padding:6px 10px;display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid #2d6a4f}
-  .fbtn{padding:5px 10px;border-radius:14px;border:1px solid #2d6a4f;background:transparent;
-         color:#95d5b2;font-size:11px;cursor:pointer;font-family:inherit}
-  .fbtn.active{background:#2d6a4f;color:#fff}
-  .popup-title{font-weight:600;font-size:13px;color:#2d6a4f;margin-bottom:4px}
-  .popup-row{font-size:11px;color:#444;line-height:1.7}
-  .repair-badge{display:inline-block;background:#e76f51;color:#fff;border-radius:4px;
-                 padding:1px 6px;font-size:10px;margin-top:3px}
-  .legend{background:rgba(13,31,22,.9);padding:8px 10px;border-radius:8px;
-           border:1px solid #2d6a4f;font-size:11px;line-height:1.9;color:#95d5b2}
-  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+:root{--g0:#0d1f16;--g1:#122b1c;--g2:#1a3326;--g3:#2d6a4f;--g4:#52b788;--ink:#e0e0e0;--ink3:#95d5b2;--amber:#e9c46a;--red:#e76f51;--sky:#a8dadc}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;height:100dvh;background:var(--g0);color:var(--ink);font-family:'Sarabun',sans-serif;overflow:hidden;user-select:none}
+#app{display:flex;flex-direction:column;height:100%;height:100dvh}
+#header{background:var(--g0);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--g3)}
+#header h1{font-family:'Mitr',sans-serif;font-size:15px;color:var(--g4)}
+#stats{font-size:11px;color:var(--ink3);text-align:right;line-height:1.5}
+#filter{background:var(--g0);padding:6px 10px;display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--g3)}
+.fbtn{padding:5px 12px;border-radius:14px;border:1px solid var(--g3);background:transparent;color:var(--g4);font-size:11px;cursor:pointer;font-family:'Sarabun',sans-serif}
+.fbtn.active{background:var(--g3);color:#fff;border-color:var(--g3)}
+#mapWrap{flex:1;position:relative;overflow:hidden}
+#mapCanvas{position:absolute;left:0;top:0;cursor:crosshair;touch-action:none}
+#info{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(13,31,22,.92);border:1px solid var(--g3);border-radius:10px;padding:8px 14px;min-width:200px;max-width:90vw;display:none;font-size:12px}
+#info h4{font-family:'Mitr',sans-serif;font-size:13px;color:var(--g4);margin-bottom:4px}
+#info p{color:var(--ink3);line-height:1.7}
+.badge{display:inline-block;background:var(--red);color:#fff;border-radius:4px;padding:1px 6px;font-size:10px;margin-top:2px}
+#legend{position:absolute;bottom:10px;right:10px;background:rgba(13,31,22,.9);border:1px solid var(--g3);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--ink3);line-height:1.9}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
 </style>
 </head>
 <body>
-<div id="header">
-  <div>
+<div id="app">
+  <div id="header">
     <h1>🌿 แผนที่สวนยางพารา — สวนลุงสน</h1>
+    <div id="stats">ทั้งหมด <b style="color:var(--g4)">187</b> ต้น | ต้องซ่อม <b style="color:var(--red)">68</b> ต้น<br><span style="font-size:10px;opacity:.7">สำรวจแล้ว ~60%</span></div>
   </div>
-  <div id="stats">กำลังโหลด...</div>
+  <div id="filter">
+    <button class="fbtn active" onclick="setFilter('all',this)">ทั้งหมด</button>
+    <button class="fbtn" onclick="setFilter('repair',this)">ต้องซ่อม</button>
+    <button class="fbtn" onclick="setFilter('ok',this)">ปกติ</button>
+    <button class="fbtn" onclick="setFilter('H',this)">หัวแถว</button>
+    <button class="fbtn" onclick="setFilter('T',this)">ท้ายแถว</button>
+  </div>
+  <div id="mapWrap">
+    <canvas id="mapCanvas"></canvas>
+    <div id="info">
+      <h4 id="iTitle">—</h4>
+      <p id="iBody">—</p>
+    </div>
+    <div id="legend">
+      <span class="dot" style="background:var(--g4)"></span>ปกติ<br>
+      <span class="dot" style="background:var(--red)"></span>ต้องซ่อม<br>
+      <span class="dot" style="background:var(--amber)"></span>หัวแถว (H)<br>
+      <span class="dot" style="background:var(--sky)"></span>ท้ายแถว (T)
+    </div>
+  </div>
 </div>
-<div id="filter">
-  <button class="fbtn active" onclick="filterMap('all',this)">ทั้งหมด</button>
-  <button class="fbtn" onclick="filterMap('repair',this)">ต้องซ่อม</button>
-  <button class="fbtn" onclick="filterMap('ok',this)">ปกติ</button>
-  <button class="fbtn" onclick="filterMap('H',this)">หัวแถว</button>
-  <button class="fbtn" onclick="filterMap('T',this)">ท้ายแถว</button>
-</div>
-<div id="map"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const TREES = [{"id": "A1-001", "row": "A1", "no": 1, "pt": "H", "lat": 8.588244, "lng": 98.565148, "repair": false, "desc": "1"}, {"id": "A1-002", "row": "A1", "no": 2, "pt": "Tree", "lat": 8.588216, "lng": 98.565113, "repair": false, "desc": "2"}, {"id": "A1-003", "row": "A1", "no": 3, "pt": "Tree", "lat": 8.588224, "lng": 98.565085, "repair": false, "desc": "3"}, {"id": "A1-004", "row": "A1", "no": 4, "pt": "Tree", "lat": 8.588218, "lng": 98.565048, "repair": false, "desc": "4"}, {"id": "A1-005", "row": "A1", "no": 5, "pt": "Tree", "lat": 8.588201, "lng": 98.56501, "repair": true, "desc": "5F"}, {"id": "A1-006", "row": "A1", "no": 6, "pt": "Tree", "lat": 8.588192, "lng": 98.564983, "repair": false, "desc": "6"}, {"id": "A1-007", "row": "A1", "no": 7, "pt": "Tree", "lat": 8.588187, "lng": 98.564962, "repair": false, "desc": "7"}, {"id": "A1-008", "row": "A1", "no": 8, "pt": "T", "lat": 8.588176, "lng": 98.564939, "repair": false, "desc": "8T"}, {"id": "A2-001", "row": "A2", "no": 1, "pt": "H", "lat": 8.588115, "lng": 98.565215, "repair": false, "desc": "1"}, {"id": "A2-002", "row": "A2", "no": 2, "pt": "Tree", "lat": 8.588118, "lng": 98.56518, "repair": false, "desc": "2"}, {"id": "A2-003", "row": "A2", "no": 3, "pt": "Tree", "lat": 8.58813, "lng": 98.565134, "repair": false, "desc": "3"}, {"id": "A2-004", "row": "A2", "no": 4, "pt": "Tree", "lat": 8.588124, "lng": 98.565101, "repair": false, "desc": "4"}, {"id": "A2-005", "row": "A2", "no": 5, "pt": "Tree", "lat": 8.588121, "lng": 98.565065, "repair": false, "desc": "5"}, {"id": "A2-006", "row": "A2", "no": 6, "pt": "Tree", "lat": 8.588111, "lng": 98.565032, "repair": true, "desc": "6F"}, {"id": "A2-007", "row": "A2", "no": 7, "pt": "Tree", "lat": 8.588103, "lng": 98.564998, "repair": true, "desc": "7F"}, {"id": "A2-008", "row": "A2", "no": 8, "pt": "Tree", "lat": 8.588089, "lng": 98.564965, "repair": false, "desc": "8"}, {"id": "A2-009", "row": "A2", "no": 9, "pt": "Tree", "lat": 8.588079, "lng": 98.564937, "repair": false, "desc": "9"}, {"id": "A2-010", "row": "A2", "no": 10, "pt": "Tree", "lat": 8.588066, "lng": 98.564905, "repair": true, "desc": "10F"}, {"id": "A2-011", "row": "A2", "no": 11, "pt": "Tree", "lat": 8.588054, "lng": 98.564875, "repair": true, "desc": "11F"}, {"id": "A2-012", "row": "A2", "no": 12, "pt": "Tree", "lat": 8.588043, "lng": 98.564846, "repair": false, "desc": "12"}, {"id": "A2-013", "row": "A2", "no": 13, "pt": "Tree", "lat": 8.588033, "lng": 98.564819, "repair": false, "desc": "13"}, {"id": "A2-014", "row": "A2", "no": 14, "pt": "Tree", "lat": 8.588026, "lng": 98.564792, "repair": false, "desc": "14"}, {"id": "A2-015", "row": "A2", "no": 15, "pt": "Tree", "lat": 8.588021, "lng": 98.56477, "repair": false, "desc": "15"}, {"id": "A2-016", "row": "A2", "no": 16, "pt": "T", "lat": 8.588018, "lng": 98.564748, "repair": true, "desc": "16F"}, {"id": "A3-001", "row": "A3", "no": 1, "pt": "H", "lat": 8.58796, "lng": 98.565294, "repair": false, "desc": "1"}, {"id": "A3-002", "row": "A3", "no": 2, "pt": "Tree", "lat": 8.587953, "lng": 98.565256, "repair": true, "desc": "2F"}, {"id": "A3-003", "row": "A3", "no": 3, "pt": "Tree", "lat": 8.587947, "lng": 98.5652, "repair": false, "desc": "3"}, {"id": "A3-004", "row": "A3", "no": 4, "pt": "Tree", "lat": 8.587948, "lng": 98.565148, "repair": false, "desc": "4"}, {"id": "A3-005", "row": "A3", "no": 5, "pt": "Tree", "lat": 8.587953, "lng": 98.565099, "repair": false, "desc": "5"}, {"id": "A3-006", "row": "A3", "no": 6, "pt": "Tree", "lat": 8.587953, "lng": 98.565053, "repair": true, "desc": "6F"}, {"id": "A3-007", "row": "A3", "no": 7, "pt": "Tree", "lat": 8.587946, "lng": 98.565012, "repair": false, "desc": "7"}, {"id": "A3-008", "row": "A3", "no": 8, "pt": "Tree", "lat": 8.587929, "lng": 98.564976, "repair": false, "desc": "8"}, {"id": "A3-009", "row": "A3", "no": 9, "pt": "Tree", "lat": 8.587917, "lng": 98.564947, "repair": false, "desc": "9"}, {"id": "A3-010", "row": "A3", "no": 10, "pt": "Tree", "lat": 8.587909, "lng": 98.564913, "repair": false, "desc": "10"}, {"id": "A3-011", "row": "A3", "no": 11, "pt": "Tree", "lat": 8.587904, "lng": 98.564877, "repair": false, "desc": "11"}, {"id": "A3-012", "row": "A3", "no": 12, "pt": "Tree", "lat": 8.587893, "lng": 98.56484, "repair": false, "desc": "12"}, {"id": "A3-013", "row": "A3", "no": 13, "pt": "Tree", "lat": 8.587893, "lng": 98.564804, "repair": false, "desc": "13"}, {"id": "A3-014", "row": "A3", "no": 14, "pt": "Tree", "lat": 8.587889, "lng": 98.564772, "repair": false, "desc": "14"}, {"id": "A3-015", "row": "A3", "no": 15, "pt": "Tree", "lat": 8.587876, "lng": 98.564747, "repair": false, "desc": "15"}, {"id": "A3-016", "row": "A3", "no": 16, "pt": "Tree", "lat": 8.587863, "lng": 98.564717, "repair": false, "desc": "16"}, {"id": "A3-017", "row": "A3", "no": 17, "pt": "Tree", "lat": 8.587855, "lng": 98.564685, "repair": false, "desc": "17"}, {"id": "A3-018", "row": "A3", "no": 18, "pt": "Tree", "lat": 8.587844, "lng": 98.564658, "repair": false, "desc": "18"}, {"id": "A3-019", "row": "A3", "no": 19, "pt": "Tree", "lat": 8.587837, "lng": 98.564634, "repair": false, "desc": "19"}, {"id": "A3-020", "row": "A3", "no": 20, "pt": "Tree", "lat": 8.587823, "lng": 98.564611, "repair": true, "desc": "20F"}, {"id": "A3-021", "row": "A3", "no": 21, "pt": "Tree", "lat": 8.587816, "lng": 98.564582, "repair": true, "desc": "21F"}, {"id": "A3-022", "row": "A3", "no": 22, "pt": "Tree", "lat": 8.58781, "lng": 98.564553, "repair": true, "desc": "22F"}, {"id": "A3-023", "row": "A3", "no": 23, "pt": "Tree", "lat": 8.5878, "lng": 98.564527, "repair": true, "desc": "23F"}, {"id": "A3-024", "row": "A3", "no": 24, "pt": "Tree", "lat": 8.587791, "lng": 98.5645, "repair": false, "desc": "24"}, {"id": "A3-025", "row": "A3", "no": 25, "pt": "Tree", "lat": 8.587783, "lng": 98.564475, "repair": false, "desc": "25"}, {"id": "A3-026", "row": "A3", "no": 26, "pt": "T", "lat": 8.587768, "lng": 98.564457, "repair": false, "desc": "26"}, {"id": "A4-001", "row": "A4", "no": 1, "pt": "H", "lat": 8.587871, "lng": 98.565285, "repair": true, "desc": "1F"}, {"id": "A4-002", "row": "A4", "no": 2, "pt": "Tree", "lat": 8.587875, "lng": 98.56526, "repair": false, "desc": "2"}, {"id": "A4-003", "row": "A4", "no": 3, "pt": "Tree", "lat": 8.587884, "lng": 98.565232, "repair": true, "desc": "3F"}, {"id": "A4-004", "row": "A4", "no": 4, "pt": "Tree", "lat": 8.587885, "lng": 98.565196, "repair": false, "desc": "4"}, {"id": "A4-005", "row": "A4", "no": 5, "pt": "Tree", "lat": 8.587876, "lng": 98.565139, "repair": true, "desc": "5F"}, {"id": "A4-006", "row": "A4", "no": 6, "pt": "Tree", "lat": 8.587876, "lng": 98.565092, "repair": false, "desc": "6"}, {"id": "A4-007", "row": "A4", "no": 7, "pt": "Tree", "lat": 8.587871, "lng": 98.565052, "repair": false, "desc": "7"}, {"id": "A4-008", "row": "A4", "no": 8, "pt": "Tree", "lat": 8.587866, "lng": 98.565001, "repair": false, "desc": "8"}, {"id": "A4-009", "row": "A4", "no": 9, "pt": "Tree", "lat": 8.587859, "lng": 98.564948, "repair": false, "desc": "9"}, {"id": "A4-010", "row": "A4", "no": 10, "pt": "Tree", "lat": 8.587847, "lng": 98.564894, "repair": false, "desc": "10"}, {"id": "A4-011", "row": "A4", "no": 11, "pt": "Tree", "lat": 8.587826, "lng": 98.564826, "repair": true, "desc": "11F"}, {"id": "A4-012", "row": "A4", "no": 12, "pt": "Tree", "lat": 8.58781, "lng": 98.564767, "repair": false, "desc": "12"}, {"id": "A4-013", "row": "A4", "no": 13, "pt": "Tree", "lat": 8.587791, "lng": 98.564736, "repair": false, "desc": "13"}, {"id": "A4-014", "row": "A4", "no": 14, "pt": "Tree", "lat": 8.587769, "lng": 98.564717, "repair": true, "desc": "14F"}, {"id": "A4-015", "row": "A4", "no": 15, "pt": "Tree", "lat": 8.587749, "lng": 98.564697, "repair": true, "desc": "15F"}, {"id": "A4-016", "row": "A4", "no": 16, "pt": "Tree", "lat": 8.58773, "lng": 98.564679, "repair": false, "desc": "16"}, {"id": "A4-017", "row": "A4", "no": 17, "pt": "Tree", "lat": 8.587713, "lng": 98.564656, "repair": true, "desc": "17F"}, {"id": "A4-018", "row": "A4", "no": 18, "pt": "Tree", "lat": 8.58769, "lng": 98.564639, "repair": false, "desc": "18"}, {"id": "A4-019", "row": "A4", "no": 19, "pt": "Tree", "lat": 8.587663, "lng": 98.564619, "repair": false, "desc": "19"}, {"id": "A4-020", "row": "A4", "no": 20, "pt": "Tree", "lat": 8.587655, "lng": 98.5646, "repair": false, "desc": "20"}, {"id": "A4-021", "row": "A4", "no": 21, "pt": "Tree", "lat": 8.587637, "lng": 98.564578, "repair": true, "desc": "21F"}, {"id": "A4-022", "row": "A4", "no": 22, "pt": "T", "lat": 8.58762, "lng": 98.564548, "repair": true, "desc": "22F"}, {"id": "A5-001", "row": "A5", "no": 1, "pt": "H", "lat": 8.587817, "lng": 98.565125, "repair": false, "desc": "1"}, {"id": "A5-002", "row": "A5", "no": 2, "pt": "Tree", "lat": 8.587822, "lng": 98.565173, "repair": true, "desc": "2F"}, {"id": "A5-003", "row": "A5", "no": 3, "pt": "Tree", "lat": 8.587822, "lng": 98.565217, "repair": false, "desc": "3"}, {"id": "A5-004", "row": "A5", "no": 4, "pt": "T", "lat": 8.5878, "lng": 98.565243, "repair": true, "desc": "4F"}, {"id": "A6-001", "row": "A6", "no": 1, "pt": "H", "lat": 8.58779, "lng": 98.565099, "repair": false, "desc": "1"}, {"id": "A6-002", "row": "A6", "no": 2, "pt": "Tree", "lat": 8.587786, "lng": 98.565128, "repair": true, "desc": "2F"}, {"id": "A6-003", "row": "A6", "no": 3, "pt": "T", "lat": 8.587789, "lng": 98.565154, "repair": true, "desc": "3F"}, {"id": "A7-001", "row": "A7", "no": 1, "pt": "H", "lat": 8.587789, "lng": 98.565042, "repair": false, "desc": "1"}, {"id": "A7-002", "row": "A7", "no": 2, "pt": "Tree", "lat": 8.587768, "lng": 98.56507, "repair": false, "desc": "2"}, {"id": "A7-003", "row": "A7", "no": 3, "pt": "Tree", "lat": 8.58773, "lng": 98.565097, "repair": true, "desc": "3F"}, {"id": "A7-004", "row": "A7", "no": 4, "pt": "Tree", "lat": 8.587735, "lng": 98.565135, "repair": false, "desc": "4"}, {"id": "A7-005", "row": "A7", "no": 5, "pt": "Tree", "lat": 8.587756, "lng": 98.565161, "repair": true, "desc": "5F"}, {"id": "A7-006", "row": "A7", "no": 6, "pt": "Tree", "lat": 8.587765, "lng": 98.565197, "repair": true, "desc": "6F"}, {"id": "A7-007", "row": "A7", "no": 7, "pt": "Tree", "lat": 8.587765, "lng": 98.56524, "repair": false, "desc": "7"}, {"id": "A7-008", "row": "A7", "no": 8, "pt": "Tree", "lat": 8.587727, "lng": 98.565287, "repair": false, "desc": "8"}, {"id": "A7-009", "row": "A7", "no": 9, "pt": "Tree", "lat": 8.587697, "lng": 98.565326, "repair": false, "desc": "9"}, {"id": "A7-010", "row": "A7", "no": 10, "pt": "Tree", "lat": 8.587664, "lng": 98.565347, "repair": false, "desc": "10"}, {"id": "A7-011", "row": "A7", "no": 11, "pt": "Tree", "lat": 8.587641, "lng": 98.565371, "repair": false, "desc": "11"}, {"id": "A7-012", "row": "A7", "no": 12, "pt": "T", "lat": 8.587624, "lng": 98.565404, "repair": true, "desc": "12F"}, {"id": "A8-001", "row": "A8", "no": 1, "pt": "H", "lat": 8.587795, "lng": 98.56493, "repair": false, "desc": "1"}, {"id": "A8-002", "row": "A8", "no": 2, "pt": "Tree", "lat": 8.587762, "lng": 98.564903, "repair": false, "desc": "2"}, {"id": "A8-003", "row": "A8", "no": 3, "pt": "Tree", "lat": 8.587732, "lng": 98.564887, "repair": true, "desc": "3F"}, {"id": "A8-004", "row": "A8", "no": 4, "pt": "Tree", "lat": 8.587724, "lng": 98.564847, "repair": false, "desc": "4"}, {"id": "A8-005", "row": "A8", "no": 5, "pt": "Tree", "lat": 8.587702, "lng": 98.564812, "repair": false, "desc": "5"}, {"id": "A8-006", "row": "A8", "no": 6, "pt": "Tree", "lat": 8.587653, "lng": 98.564783, "repair": false, "desc": "6"}, {"id": "A8-007", "row": "A8", "no": 7, "pt": "Tree", "lat": 8.587624, "lng": 98.564743, "repair": false, "desc": "7"}, {"id": "A8-008", "row": "A8", "no": 8, "pt": "Tree", "lat": 8.587592, "lng": 98.564728, "repair": false, "desc": "8"}, {"id": "A8-009", "row": "A8", "no": 9, "pt": "Tree", "lat": 8.587581, "lng": 98.56472, "repair": false, "desc": "9"}, {"id": "A8-010", "row": "A8", "no": 10, "pt": "Tree", "lat": 8.587542, "lng": 98.564672, "repair": false, "desc": "10"}, {"id": "A8-011", "row": "A8", "no": 11, "pt": "Tree", "lat": 8.587529, "lng": 98.56464, "repair": false, "desc": "11"}, {"id": "A8-012", "row": "A8", "no": 12, "pt": "Tree", "lat": 8.587497, "lng": 98.564609, "repair": false, "desc": "12"}, {"id": "A8-013", "row": "A8", "no": 13, "pt": "T", "lat": 8.587476, "lng": 98.564581, "repair": true, "desc": "13F"}, {"id": "A9-001", "row": "A9", "no": 1, "pt": "H", "lat": 8.587696, "lng": 98.564949, "repair": false, "desc": "1"}, {"id": "A9-002", "row": "A9", "no": 2, "pt": "Tree", "lat": 8.587699, "lng": 98.564981, "repair": false, "desc": "2"}, {"id": "A9-003", "row": "A9", "no": 3, "pt": "Tree", "lat": 8.587712, "lng": 98.565012, "repair": false, "desc": "3"}, {"id": "A9-004", "row": "A9", "no": 4, "pt": "Tree", "lat": 8.587683, "lng": 98.565038, "repair": false, "desc": "4"}, {"id": "A9-005", "row": "A9", "no": 5, "pt": "Tree", "lat": 8.587674, "lng": 98.565062, "repair": false, "desc": "5"}, {"id": "A9-006", "row": "A9", "no": 6, "pt": "Tree", "lat": 8.587652, "lng": 98.565092, "repair": false, "desc": "6"}, {"id": "A9-007", "row": "A9", "no": 7, "pt": "Tree", "lat": 8.587656, "lng": 98.565125, "repair": true, "desc": "7F"}, {"id": "A9-008", "row": "A9", "no": 8, "pt": "Tree", "lat": 8.587662, "lng": 98.565162, "repair": true, "desc": "8F"}, {"id": "A9-009", "row": "A9", "no": 9, "pt": "Tree", "lat": 8.587679, "lng": 98.565202, "repair": false, "desc": "9"}, {"id": "A9-010", "row": "A9", "no": 10, "pt": "Tree", "lat": 8.587674, "lng": 98.565241, "repair": false, "desc": "10"}, {"id": "A9-011", "row": "A9", "no": 11, "pt": "Tree", "lat": 8.587655, "lng": 98.56527, "repair": false, "desc": "11"}, {"id": "A9-012", "row": "A9", "no": 12, "pt": "Tree", "lat": 8.587621, "lng": 98.565279, "repair": false, "desc": "12"}, {"id": "A9-013", "row": "A9", "no": 13, "pt": "Tree", "lat": 8.587611, "lng": 98.565306, "repair": true, "desc": "13F"}, {"id": "A9-014", "row": "A9", "no": 14, "pt": "Tree", "lat": 8.587596, "lng": 98.565335, "repair": false, "desc": "14"}, {"id": "A9-015", "row": "A9", "no": 15, "pt": "Tree", "lat": 8.58757, "lng": 98.565373, "repair": false, "desc": "15"}, {"id": "A9-016", "row": "A9", "no": 16, "pt": "T", "lat": 8.587549, "lng": 98.565394, "repair": false, "desc": "16"}, {"id": "A10-001", "row": "A10", "no": 1, "pt": "H", "lat": 8.587613, "lng": 98.564815, "repair": true, "desc": "1F"}, {"id": "A10-002", "row": "A10", "no": 2, "pt": "Tree", "lat": 8.587578, "lng": 98.564765, "repair": true, "desc": "2F"}, {"id": "A10-003", "row": "A10", "no": 3, "pt": "Tree", "lat": 8.587503, "lng": 98.56473, "repair": true, "desc": "3F"}, {"id": "A10-004", "row": "A10", "no": 4, "pt": "Tree", "lat": 8.587477, "lng": 98.564711, "repair": true, "desc": "4F"}, {"id": "A10-005", "row": "A10", "no": 5, "pt": "Tree", "lat": 8.587465, "lng": 98.564693, "repair": true, "desc": "5F"}, {"id": "A10-006", "row": "A10", "no": 6, "pt": "Tree", "lat": 8.587442, "lng": 98.564666, "repair": true, "desc": "6F"}, {"id": "A10-007", "row": "A10", "no": 7, "pt": "Tree", "lat": 8.587413, "lng": 98.564628, "repair": true, "desc": "7F"}, {"id": "A10-008", "row": "A10", "no": 8, "pt": "Tree", "lat": 8.587382, "lng": 98.564593, "repair": false, "desc": "8"}, {"id": "A10-009", "row": "A10", "no": 9, "pt": "T", "lat": 8.587359, "lng": 98.564572, "repair": true, "desc": "9F"}, {"id": "A11-001", "row": "A11", "no": 1, "pt": "H", "lat": 8.587448, "lng": 98.564801, "repair": true, "desc": "1F"}, {"id": "A11-003", "row": "A11", "no": 3, "pt": "Tree", "lat": 8.587519, "lng": 98.56487, "repair": true, "desc": "3F"}, {"id": "A11-004", "row": "A11", "no": 4, "pt": "Tree", "lat": 8.587556, "lng": 98.564889, "repair": false, "desc": "4"}, {"id": "A11-005", "row": "A11", "no": 5, "pt": "Tree", "lat": 8.58759, "lng": 98.564927, "repair": true, "desc": "5F"}, {"id": "A11-006", "row": "A11", "no": 6, "pt": "Tree", "lat": 8.587612, "lng": 98.564938, "repair": false, "desc": "6"}, {"id": "A11-007", "row": "A11", "no": 7, "pt": "Tree", "lat": 8.587644, "lng": 98.564986, "repair": false, "desc": "7"}, {"id": "A11-008", "row": "A11", "no": 8, "pt": "Tree", "lat": 8.587619, "lng": 98.565025, "repair": false, "desc": "8"}, {"id": "A11-009", "row": "A11", "no": 9, "pt": "Tree", "lat": 8.587588, "lng": 98.565046, "repair": true, "desc": "9F"}, {"id": "A11-010", "row": "A11", "no": 10, "pt": "Tree", "lat": 8.587573, "lng": 98.565068, "repair": false, "desc": "10"}, {"id": "A11-011", "row": "A11", "no": 11, "pt": "Tree", "lat": 8.587559, "lng": 98.565094, "repair": false, "desc": "11"}, {"id": "A11-012", "row": "A11", "no": 12, "pt": "Tree", "lat": 8.58748, "lng": 98.564839, "repair": true, "desc": "12F"}, {"id": "A11-012", "row": "A11", "no": 12, "pt": "Tree", "lat": 8.587568, "lng": 98.565142, "repair": false, "desc": "12"}, {"id": "A11-013", "row": "A11", "no": 13, "pt": "Tree", "lat": 8.587563, "lng": 98.565187, "repair": false, "desc": "13"}, {"id": "A11-014", "row": "A11", "no": 14, "pt": "Tree", "lat": 8.587554, "lng": 98.565227, "repair": false, "desc": "14"}, {"id": "A11-015", "row": "A11", "no": 15, "pt": "Tree", "lat": 8.587543, "lng": 98.565259, "repair": false, "desc": "15"}, {"id": "A11-016", "row": "A11", "no": 16, "pt": "Tree", "lat": 8.587527, "lng": 98.565305, "repair": false, "desc": "16"}, {"id": "A11-017", "row": "A11", "no": 17, "pt": "Tree", "lat": 8.587514, "lng": 98.565341, "repair": false, "desc": "17"}, {"id": "A11-018", "row": "A11", "no": 18, "pt": "Tree", "lat": 8.5875, "lng": 98.565368, "repair": false, "desc": "18"}, {"id": "A11-019", "row": "A11", "no": 19, "pt": "Tree", "lat": 8.587484, "lng": 98.565393, "repair": false, "desc": "19"}, {"id": "A11-020", "row": "A11", "no": 20, "pt": "Tree", "lat": 8.587468, "lng": 98.565425, "repair": true, "desc": "20F"}, {"id": "A11-021", "row": "A11", "no": 21, "pt": "T", "lat": 8.587453, "lng": 98.565447, "repair": false, "desc": "21"}, {"id": "A12-001", "row": "A12", "no": 1, "pt": "H", "lat": 8.587271, "lng": 98.56448, "repair": true, "desc": "1F"}, {"id": "A12-002", "row": "A12", "no": 2, "pt": "Tree", "lat": 8.587307, "lng": 98.564458, "repair": true, "desc": "2F"}, {"id": "A12-003", "row": "A12", "no": 3, "pt": "Tree", "lat": 8.587334, "lng": 98.564434, "repair": true, "desc": "3F"}, {"id": "A12-004", "row": "A12", "no": 4, "pt": "Tree", "lat": 8.587343, "lng": 98.564409, "repair": true, "desc": "4F"}, {"id": "A12-005", "row": "A12", "no": 5, "pt": "Tree", "lat": 8.587353, "lng": 98.564384, "repair": true, "desc": "5F"}, {"id": "A12-006", "row": "A12", "no": 6, "pt": "T", "lat": 8.587361, "lng": 98.564356, "repair": true, "desc": "6F"}, {"id": "A13-001", "row": "A13", "no": 1, "pt": "H", "lat": 8.587193, "lng": 98.564577, "repair": true, "desc": "1F"}, {"id": "A13-002", "row": "A13", "no": 2, "pt": "Tree", "lat": 8.587223, "lng": 98.564607, "repair": true, "desc": "2F"}, {"id": "A13-003", "row": "A13", "no": 3, "pt": "Tree", "lat": 8.587253, "lng": 98.564636, "repair": true, "desc": "3F"}, {"id": "A13-004", "row": "A13", "no": 4, "pt": "Tree", "lat": 8.5873, "lng": 98.564659, "repair": true, "desc": "4F"}, {"id": "A13-005", "row": "A13", "no": 5, "pt": "Tree", "lat": 8.587317, "lng": 98.564686, "repair": true, "desc": "5F"}, {"id": "A13-006", "row": "A13", "no": 6, "pt": "Tree", "lat": 8.587351, "lng": 98.564726, "repair": false, "desc": "6"}, {"id": "A13-007", "row": "A13", "no": 7, "pt": "Tree", "lat": 8.587363, "lng": 98.564768, "repair": false, "desc": "7"}, {"id": "A13-008", "row": "A13", "no": 8, "pt": "Tree", "lat": 8.587381, "lng": 98.564812, "repair": false, "desc": "8"}, {"id": "A13-009", "row": "A13", "no": 9, "pt": "Tree", "lat": 8.587402, "lng": 98.564853, "repair": false, "desc": "9"}, {"id": "A13-010", "row": "A13", "no": 10, "pt": "Tree", "lat": 8.587429, "lng": 98.564887, "repair": false, "desc": "10"}, {"id": "A13-011", "row": "A13", "no": 11, "pt": "Tree", "lat": 8.58746, "lng": 98.564905, "repair": false, "desc": "11"}, {"id": "A13-012", "row": "A13", "no": 12, "pt": "Tree", "lat": 8.587473, "lng": 98.564927, "repair": false, "desc": "12"}, {"id": "A13-013", "row": "A13", "no": 13, "pt": "Tree", "lat": 8.587506, "lng": 98.564945, "repair": false, "desc": "13"}, {"id": "A13-014", "row": "A13", "no": 14, "pt": "Tree", "lat": 8.587534, "lng": 98.564965, "repair": false, "desc": "14"}, {"id": "A13-015", "row": "A13", "no": 15, "pt": "Tree", "lat": 8.587565, "lng": 98.56499, "repair": false, "desc": "15"}, {"id": "A13-016", "row": "A13", "no": 16, "pt": "Tree", "lat": 8.587558, "lng": 98.565031, "repair": true, "desc": "16F"}, {"id": "A13-017", "row": "A13", "no": 17, "pt": "Tree", "lat": 8.587529, "lng": 98.565058, "repair": true, "desc": "17F"}, {"id": "A13-018", "row": "A13", "no": 18, "pt": "Tree", "lat": 8.587496, "lng": 98.565083, "repair": false, "desc": "18"}, {"id": "A13-019", "row": "A13", "no": 19, "pt": "Tree", "lat": 8.587499, "lng": 98.565121, "repair": false, "desc": "19"}, {"id": "A13-020", "row": "A13", "no": 20, "pt": "Tree", "lat": 8.587504, "lng": 98.565154, "repair": false, "desc": "20"}, {"id": "A13-021", "row": "A13", "no": 21, "pt": "Tree", "lat": 8.587508, "lng": 98.5652, "repair": false, "desc": "21"}, {"id": "A13-022", "row": "A13", "no": 22, "pt": "Tree", "lat": 8.587507, "lng": 98.565231, "repair": false, "desc": "22"}, {"id": "A13-023", "row": "A13", "no": 23, "pt": "Tree", "lat": 8.587482, "lng": 98.565257, "repair": true, "desc": "23F"}, {"id": "A13-024", "row": "A13", "no": 24, "pt": "Tree", "lat": 8.587477, "lng": 98.565298, "repair": true, "desc": "24F"}, {"id": "A13-025", "row": "A13", "no": 25, "pt": "Tree", "lat": 8.587477, "lng": 98.565323, "repair": false, "desc": "25"}, {"id": "A13-026", "row": "A13", "no": 26, "pt": "T", "lat": 8.587455, "lng": 98.565341, "repair": false, "desc": "26"}, {"id": "A14-001", "row": "A14", "no": 1, "pt": "H", "lat": 8.58716, "lng": 98.564479, "repair": true, "desc": "1F"}, {"id": "A14-002", "row": "A14", "no": 2, "pt": "Tree", "lat": 8.587197, "lng": 98.564434, "repair": true, "desc": "2F"}, {"id": "A14-003", "row": "A14", "no": 3, "pt": "Tree", "lat": 8.587221, "lng": 98.564403, "repair": true, "desc": "3F"}, {"id": "A14-004", "row": "A14", "no": 4, "pt": "Tree", "lat": 8.587249, "lng": 98.564373, "repair": true, "desc": "4F"}, {"id": "A14-005", "row": "A14", "no": 5, "pt": "T", "lat": 8.587277, "lng": 98.564347, "repair": true, "desc": "5F"}];
+const cvs = document.getElementById('mapCanvas');
+const ctx = cvs.getContext('2d');
+let W=0, H=0, filter='all', selIdx=null;
 
-const map = L.map('map',{zoomControl:true});
+function resize(){
+  const wrap = document.getElementById('mapWrap');
+  W = cvs.width  = cvs.style.width  = wrap.clientWidth;
+  H = cvs.height = cvs.style.height = wrap.clientHeight;
+  draw();
+}
 
-// Satellite tiles (Esri)
-const satellite = L.tileLayer(
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  {attribution:'Esri', maxZoom:21}
-);
-// Street tiles (OSM)
-const street = L.tileLayer(
-  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-  {attribution:'OSM', maxZoom:19}
-);
-satellite.addTo(map);
-L.control.layers({'🛰 ดาวเทียม':satellite,'🗺 แผนที่':street}).addTo(map);
+function getBounds(pts){
+  const lats = pts.map(p=>p.lat), lngs = pts.map(p=>p.lng);
+  return {minLat:Math.min(...lats),maxLat:Math.max(...lats),minLng:Math.min(...lngs),maxLng:Math.max(...lngs)};
+}
 
-// Fit to data
-const lats = TREES.map(t=>t.lat), lngs = TREES.map(t=>t.lng);
-map.fitBounds([[Math.min(...lats),Math.min(...lngs)],[Math.max(...lats),Math.max(...lngs)]],{padding:[20,20]});
+function toXY(lat,lng,b){
+  const pad=0.07;
+  const dLng=b.maxLng-b.minLng||.001, dLat=b.maxLat-b.minLat||.001;
+  const x=(lng-b.minLng)/dLng*(W*(1-2*pad))+W*pad;
+  const y=(1-(lat-b.minLat)/dLat)*(H*(1-2*pad))+H*pad;
+  return{x,y};
+}
 
-// Counters
-const total = TREES.length;
-const repairCount = TREES.filter(t=>t.repair).length;
-document.getElementById('stats').innerHTML = `ทั้งหมด <b style="color:#95d5b2">${total}</b> ต้น | ต้องซ่อม <b style="color:#e76f51">${repairCount}</b> ต้น`;
-
-// Color function
-function getColor(t){
+function ptColor(t){
   if(t.pt==='H') return '#e9c46a';
   if(t.pt==='T') return '#a8dadc';
   if(t.repair)   return '#e76f51';
   return '#52b788';
 }
-function getRadius(t){
-  return (t.pt==='H'||t.pt==='T') ? 6 : 5;
+
+function visible(t){
+  if(filter==='repair') return t.repair;
+  if(filter==='ok')     return !t.repair;
+  if(filter==='H')      return t.pt==='H';
+  if(filter==='T')      return t.pt==='T';
+  return true;
 }
 
-let markers = [];
-let currentFilter = 'all';
+function convexHull(pts){
+  if(pts.length<3) return pts;
+  pts = pts.slice().sort((a,b)=>a.x-b.x||a.y-b.y);
+  const cross=(o,a,b)=>(a.x-o.x)*(b.y-o.y)-(a.y-o.y)*(b.x-o.x);
+  const lower=[], upper=[];
+  for(const p of pts){while(lower.length>=2&&cross(lower[lower.length-2],lower[lower.length-1],p)<=0)lower.pop();lower.push(p);}
+  for(let i=pts.length-1;i>=0;i--){const p=pts[i];while(upper.length>=2&&cross(upper[upper.length-2],upper[upper.length-1],p)<=0)upper.pop();upper.push(p);}
+  upper.pop();lower.pop();
+  return lower.concat(upper);
+}
 
-function createMarkers(){
-  markers.forEach(m=>map.removeLayer(m));
-  markers = [];
-  TREES.forEach(t=>{
-    if(currentFilter==='repair' && !t.repair) return;
-    if(currentFilter==='ok' && t.repair) return;
-    if(currentFilter==='H' && t.pt!=='H') return;
-    if(currentFilter==='T' && t.pt!=='T') return;
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#1a3326'; ctx.fillRect(0,0,W,H);
+  const vis = TREES.filter(visible);
+  if(!vis.length){ ctx.fillStyle='rgba(149,213,178,.4)'; ctx.font='14px Sarabun'; ctx.textAlign='center'; ctx.fillText('ไม่มีข้อมูล',W/2,H/2); return; }
+  const b = getBounds(TREES); // always use full bounds for consistent layout
 
-    const m = L.circleMarker([t.lat,t.lng],{
-      radius: getRadius(t),
-      fillColor: getColor(t),
-      color: '#fff',
-      weight: 1,
-      opacity: 0.9,
-      fillOpacity: 0.9
-    });
+  // Draw row backgrounds
+  const rowSet = [...new Set(TREES.map(t=>t.row))];
+  const rowColors = ['rgba(82,183,136,.06)','rgba(45,106,79,.06)','rgba(233,196,106,.04)','rgba(168,218,220,.04)'];
+  rowSet.forEach((row,i)=>{
+    const pts = TREES.filter(t=>t.row===row).map(t=>toXY(t.lat,t.lng,b));
+    if(pts.length<2) return;
+    const hull = convexHull(pts);
+    if(hull.length<2) return;
+    ctx.beginPath();
+    hull.forEach((p,j)=>j?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));
+    ctx.closePath();
+    ctx.fillStyle=rowColors[i%rowColors.length]; ctx.fill();
+  });
 
-    const repairBadge = t.repair ? '<span class="repair-badge">ต้องซ่อม</span>' : '';
-    const ptLabel = t.pt==='H'?'🟡 หัวแถว':t.pt==='T'?'🔵 ท้ายแถว':'🟢 ต้นยาง';
-    m.bindPopup(`
-      <div class="popup-title">${t.id}</div>
-      <div class="popup-row">
-        <b>แถว:</b> ${t.row} | <b>ต้นที่:</b> ${t.no}<br>
-        <b>ประเภท:</b> ${ptLabel}<br>
-        ${repairBadge}
-      </div>
-    `);
-    m.addTo(map);
-    markers.push(m);
+  // Draw row labels
+  ctx.textAlign='center'; ctx.font='bold 10px Sarabun';
+  rowSet.forEach(row=>{
+    const pts = TREES.filter(t=>t.row===row).map(t=>toXY(t.lat,t.lng,b));
+    const cx = pts.reduce((s,p)=>s+p.x,0)/pts.length;
+    const cy = pts.reduce((s,p)=>s+p.y,0)/pts.length;
+    ctx.fillStyle='rgba(149,213,178,.5)';
+    ctx.fillText(row, cx, cy-12);
+  });
+
+  // Draw trees
+  TREES.forEach((t,i)=>{
+    if(!visible(t)) return;
+    const {x,y} = toXY(t.lat,t.lng,b);
+    const r = (t.pt==='H'||t.pt==='T') ? 6 : 4;
+    const isSel = selIdx===i;
+
+    if(isSel){
+      ctx.beginPath(); ctx.arc(x,y,r+6,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,.15)'; ctx.fill();
+    }
+
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle=ptColor(t); ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.3)'; ctx.lineWidth=0.5; ctx.stroke();
+
+    if(isSel){
+      ctx.beginPath(); ctx.arc(x,y,r+3,0,Math.PI*2);
+      ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
+    }
   });
 }
 
-function filterMap(f, btn){
-  currentFilter = f;
-  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  createMarkers();
+function onTap(e){
+  const r = cvs.getBoundingClientRect();
+  const mx = (e.clientX||e.touches[0].clientX)-r.left;
+  const my = (e.clientY||e.touches[0].clientY)-r.top;
+  const b = getBounds(TREES);
+  let best=null, bestD=25;
+  TREES.forEach((t,i)=>{
+    if(!visible(t)) return;
+    const {x,y}=toXY(t.lat,t.lng,b);
+    const d=Math.hypot(mx-x,my-y);
+    if(d<bestD){bestD=d;best=i;}
+  });
+  selIdx = best;
+  const info = document.getElementById('info');
+  if(best!==null){
+    const t = TREES[best];
+    const ptLabel = t.pt==='H'?'🟡 หัวแถว':t.pt==='T'?'🔵 ท้ายแถว':'🟢 ต้นยาง';
+    document.getElementById('iTitle').textContent = t.id;
+    document.getElementById('iBody').innerHTML = `แถว: <b>${t.row}</b> | ต้นที่: <b>${t.no}</b><br>ประเภท: ${ptLabel}${t.repair?'<br><span class="badge">ต้องซ่อม</span>':''}`;
+    info.style.display='block';
+  } else {
+    info.style.display='none';
+  }
+  draw();
 }
 
-// Legend
-const legend = L.control({position:'bottomright'});
-legend.onAdd = ()=>{
-  const d = L.DomUtil.create('div','legend');
-  d.innerHTML = `
-    <span class="dot" style="background:#52b788"></span>ปกติ<br>
-    <span class="dot" style="background:#e76f51"></span>ต้องซ่อม<br>
-    <span class="dot" style="background:#e9c46a"></span>หัวแถว (H)<br>
-    <span class="dot" style="background:#a8dadc"></span>ท้ายแถว (T)
-  `;
-  return d;
-};
-legend.addTo(map);
+function setFilter(f, btn){
+  filter=f; selIdx=null;
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('info').style.display='none';
+  draw();
+}
 
-createMarkers();
+window.addEventListener('resize', resize);
+cvs.addEventListener('click', onTap);
+cvs.addEventListener('touchend', e=>{e.preventDefault();onTap(e);}, {passive:false});
+resize();
 </script>
 </body>
 </html>
