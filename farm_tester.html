@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>สวนลุงสน — API Tester</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:sans-serif;max-width:800px;margin:0 auto;padding:0 0 40px;color:#222;background:#f0f0f0}
+
+/* ── Farm Toggle ── */
+.farm-switcher{display:flex;background:#1a1a1a;border-radius:0}
+.farm-btn{flex:1;padding:14px 20px;border:none;font-size:14px;font-weight:600;cursor:pointer;
+  transition:all 0.2s;letter-spacing:0.3px}
+.farm-btn.palm{background:#2d6a4f;color:#fff}
+.farm-btn.rubber{background:#1a1a1a;color:#888}
+.farm-btn.rubber.active{background:#5a7a1e;color:#fff}
+.farm-btn.palm.active{background:#2d6a4f;color:#fff}
+.farm-btn:not(.active):hover{opacity:0.85}
+
+/* ── Topbar ── */
+.topbar{padding:16px 22px}
+.topbar.palm-bar{background:#2d6a4f}
+.topbar.rubber-bar{background:#5a7a1e}
+.topbar h1{font-size:18px;font-weight:600;color:#fff;margin-bottom:3px}
+.topbar p{font-size:12px;color:rgba(255,255,255,0.7)}
+
+/* ── Body ── */
+.body{background:#fff;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 12px 12px;padding:20px;margin-bottom:20px}
+.section{border:1px solid #e0e0e0;border-radius:10px;padding:16px 18px;margin-bottom:14px}
+.section h2{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.palm-bar .section h2,.h2-palm{color:#2d6a4f}.h2-rubber{color:#5a7a1e}
+.tag{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500}
+.tag-green{background:#e1f5ee;color:#0f6e56}
+.tag-lime{background:#edf5d0;color:#3d5c0a}
+.tag-amber{background:#faeeda;color:#7a4700}
+
+label{display:block;font-size:11px;color:#666;margin-bottom:3px;margin-top:10px}
+input,select{width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:7px;font-size:13px}
+input:focus,select:focus{outline:none;box-shadow:0 0 0 2px #e1f5ee}
+.palm-focus input:focus,.palm-focus select:focus{border-color:#2d6a4f}
+.rubber-focus input:focus,.rubber-focus select:focus{border-color:#5a7a1e;box-shadow:0 0 0 2px #edf5d0}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 12px}
+
+button{padding:9px 20px;background:#2d6a4f;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer;margin-top:12px}
+button:hover{background:#235a3e}
+button.sec{background:#f0f0f0;color:#444;margin-left:8px}
+button.sec:hover{background:#e0e0e0}
+button.rubber-btn{background:#5a7a1e}
+button.rubber-btn:hover{background:#4a6a10}
+
+pre{background:#f5f5f5;border-radius:7px;padding:12px;font-size:11px;overflow-x:auto;max-height:180px;white-space:pre-wrap;margin-top:10px}
+.pre-palm{border-left:3px solid #2d6a4f}
+.pre-rubber{border-left:3px solid #5a7a1e}
+.url-input{font-size:11px;font-family:monospace}
+.url-status{font-size:12px;margin-left:10px;font-weight:500}
+.url-status.palm{color:#0f6e56}.url-status.rubber{color:#3d5c0a}
+
+.activity-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;margin-bottom:14px}
+.tab-btn{padding:7px 16px;border:1px solid #ccc;border-radius:20px;background:#f5f5f5;font-size:12px;cursor:pointer;color:#555;margin-top:0}
+.tab-btn.active.palm-tab{background:#2d6a4f;color:#fff;border-color:#2d6a4f}
+.tab-btn.active.rubber-tab{background:#5a7a1e;color:#fff;border-color:#5a7a1e}
+.tab-btn:not(.active):hover{background:#e8f5ee;border-color:#2d6a4f;color:#2d6a4f}
+
+.hidden{display:none}
+.hint{font-size:10px;color:#888;margin-top:4px;font-style:italic}
+.divider{border:none;border-top:1px dashed #e0e0e0;margin:12px 0}
+
+/* ── Summary boxes ── */
+.summary-box{border-radius:10px;padding:14px 16px;margin-top:12px}
+.summary-box h3{font-size:12px;font-weight:600;margin-bottom:10px}
+.s-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px dashed rgba(0,0,0,0.08);font-size:12px}
+.s-row:last-child{border-bottom:none;padding-top:8px;margin-top:2px}
+.s-row .lbl{color:#555}
+.s-row .val{font-weight:600}
+.s-row.total .val{font-size:15px}
+.s-row.profit-pos .val{color:#0f6e56}
+.s-row.profit-neg .val{color:#c0392b}
+
+.box-harvest{background:#e8f5ee;border:1px solid #a8d5c2}
+.box-harvest h3{color:#0f6e56}
+.box-harvest .val{color:#0f6e56}
+.box-harvest .s-row.cost .val{color:#c0392b}
+
+.box-tap{background:#eaf5d0;border:1px solid #b4d870}
+.box-tap h3{color:#3d5c0a}
+.box-tap .val{color:#3d5c0a}
+.box-tap .s-row.cost .val{color:#c0392b}
+
+.box-fert{background:#f0f8ff;border:1px solid #90c0e0}
+.box-fert h3{color:#1a5080}
+.box-fert .val{color:#1a5080}
+
+.box-prune{background:#fdf5e8;border:1px solid #e8c97a}
+.box-prune h3{color:#7a4700}
+.box-prune .val{color:#7a4700}
+
+.box-maintain{background:#f5f0fc;border:1px solid #c5a8e0}
+.box-maintain h3{color:#5a2d82}
+.box-maintain .val{color:#5a2d82}
+
+.box-spray{background:#f0fbff;border:1px solid #80d0e8}
+.box-spray h3{color:#0a5070}
+.box-spray .val{color:#0a5070}
+
+.box-replant{background:#fff5e8;border:1px solid #d4a060}
+.box-replant h3{color:#704000}
+.box-replant .val{color:#704000}
+
+/* Progress bar */
+.prog-wrap{width:100%;background:rgba(0,0,0,0.08);border-radius:20px;height:10px;margin:6px 0 2px;overflow:hidden}
+.prog-bar{height:10px;border-radius:20px;transition:width 0.3s}
+.prog-bar.palm{background:#2d6a4f}
+.prog-bar.rubber{background:#5a7a1e}
+.prog-label{font-size:10px;color:#555;text-align:right}
+
+.inp-green{background:#e8f5ee;color:#0f6e56;border-color:#a8d5c2;font-weight:700;font-size:14px}
+.inp-red{background:#fdecea;color:#c0392b;border-color:#f0a8a8;font-weight:700;font-size:14px}
+.inp-profit{font-size:15px;font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- Farm Toggle -->
+<div class="farm-switcher">
+  <button class="farm-btn palm active" id="palmFarmBtn" onclick="switchFarm('palm')">🌴 สวนปาล์มลุงสน</button>
+  <button class="farm-btn rubber" id="rubberFarmBtn" onclick="switchFarm('rubber')">🌿 สวนยางพาราลุงสน</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     PALM SECTION
+════════════════════════════════════════════════════════════ -->
+<div id="palmSection">
+  <div class="topbar palm-bar">
+    <h1>🌴 สวนปาล์มลุงสน — API Tester</h1>
+    <p>บันทึกกิจกรรมสวนปาล์ม · ใส่ URL ของ Apps Script (palm_api.gs)</p>
+  </div>
+  <div class="body">
+
+    <!-- URL -->
+    <div class="section">
+      <h2 style="color:#2d6a4f">ตั้งค่า API URL <span class="tag tag-green">Palm</span></h2>
+      <label>Apps Script Web App URL (palm_api.gs)</label>
+      <input type="url" id="palmApiUrl" class="url-input" placeholder="https://script.google.com/macros/s/XXXXXXX/exec">
+      <button onclick="saveUrl('palm')">บันทึก URL</button>
+      <span id="palmUrlStatus" class="url-status palm"></span>
+    </div>
+
+    <!-- GET -->
+    <div class="section">
+      <h2 style="color:#2d6a4f">อ่านข้อมูล (GET) <span class="tag tag-green">doGet</span></h2>
+      <label>เลือกข้อมูลที่ต้องการ</label>
+      <select id="palmGetAction">
+        <option value="logs">Activity_Logs — บันทึกกิจกรรม</option>
+        <option value="master">Master Plan — แผนงาน</option>
+        <option value="map">Palm Map — ตำแหน่งต้นปาล์ม</option>
+        <option value="summary">Summary — สรุปรายได้/กำไร</option>
+      </select>
+      <button onclick="doGet('palm')">ดึงข้อมูล</button>
+      <button class="sec" onclick="clearResult('palmGetResult')">ล้าง</button>
+      <pre id="palmGetResult" class="pre-palm">— ผลลัพธ์จะแสดงที่นี่ —</pre>
+    </div>
+
+    <!-- POST -->
+    <div class="section">
+      <h2 style="color:#2d6a4f">บันทึกกิจกรรมปาล์ม (POST) <span class="tag tag-amber">doPost</span></h2>
+
+      <label>ประเภทกิจกรรม</label>
+      <div class="activity-tabs" id="palmActTabs">
+        <button class="tab-btn palm-tab active" onclick="setPalmActivity('harvest',this)">🌿 เก็บเกี่ยว</button>
+        <button class="tab-btn palm-tab" onclick="setPalmActivity('fertilize',this)">🌱 ใส่ปุ๋ย</button>
+        <button class="tab-btn palm-tab" onclick="setPalmActivity('prune',this)">✂️ ตัดแต่งทางใบ</button>
+        <button class="tab-btn palm-tab" onclick="setPalmActivity('maintain',this)">🔧 ดูแลพื้นที่</button>
+      </div>
+
+      <label>รหัสแผนงาน</label>
+      <select id="palmPlanRef" onchange="updatePalmHint(); palmRecalc()"></select>
+      <p class="hint" id="palmPlanHint"></p>
+
+      <label>โซนพื้นที่</label>
+      <select id="palmZone" onchange="palmRecalc()">
+        <option value="ปาล์มเล็ก">Zone A — ปาล์มเล็ก (52 ต้น)</option>
+        <option value="ปาล์มใหญ่">Zone B — ปาล์มใหญ่ (125 ต้น)</option>
+        <option value="ทั้งหมด">ทั้งสวน (177 ต้น)</option>
+      </select>
+
+      <!-- เก็บเกี่ยว -->
+      <div id="palmHarvestFields">
+        <div class="grid2">
+          <div><label>น้ำหนักที่ได้ (กก.)</label>
+            <input type="number" id="phvWeight" placeholder="0" min="0" step="0.5" oninput="palmRecalc()"></div>
+          <div><label>ราคาขาย/กก. (บาท)</label>
+            <input type="number" id="phvPrice" placeholder="เช่น 8.50" step="0.25" min="0" oninput="palmRecalc()"></div>
+        </div>
+        <div class="grid2">
+          <div><label>ค่าแรงเก็บ/กก. (บาท)</label>
+            <input type="number" id="phvLaborRate" placeholder="1.00" step="0.25" min="0" value="1" oninput="palmRecalc()"></div>
+          <div><label>ค่าใช้จ่ายอื่น (บาท)</label>
+            <input type="number" id="phvOther" placeholder="0" min="0" oninput="palmRecalc()"></div>
+        </div>
+        <div class="summary-box box-harvest" id="phvSummary">
+          <h3>📊 สรุปการเก็บเกี่ยวรอบนี้</h3>
+          <div class="s-row"><span class="lbl">รายได้จากการขาย</span><span class="val" id="phv_revenue">0 บาท</span></div>
+          <div class="s-row cost"><span class="lbl">ค่าแรงเก็บเกี่ยว</span><span class="val" id="phv_labor">0 บาท</span></div>
+          <div class="s-row cost"><span class="lbl">ค่าใช้จ่ายอื่นๆ</span><span class="val" id="phv_other">0 บาท</span></div>
+          <div class="s-row cost total"><span class="lbl">ต้นทุนรวม</span><span class="val" id="phv_totalCost">0 บาท</span></div>
+          <div class="s-row total profit-pos" id="phv_profitRow"><span class="lbl">กำไรสุทธิ</span><span class="val inp-profit" id="phv_profit">0 บาท</span></div>
+        </div>
+      </div>
+
+      <!-- ใส่ปุ๋ย -->
+      <div id="palmFertFields" class="hidden">
+        <label>ประเภทปุ๋ย</label>
+        <div class="activity-tabs" id="palmFertTypeTabs">
+          <button class="tab-btn palm-tab active" onclick="setPalmFertType('main',this)">🌿 ปุ๋ยหลัก</button>
+          <button class="tab-btn palm-tab" onclick="setPalmFertType('secondary',this)">🪨 ธาตุอาหารรอง</button>
+          <button class="tab-btn palm-tab" onclick="setPalmFertType('micro',this)">🔬 ธาตุอาหารเสริม</button>
+        </div>
+        <div id="pfzTypeHint" style="font-size:10px;color:#888;margin-bottom:8px;font-style:italic;padding:6px 10px;background:#f5f5f5;border-radius:6px;border-left:3px solid #2d6a4f">
+          ปุ๋ยหลัก N-P-K สูตร 15-15-15 / 13-13-21 / 14-4-24 / 0-0-60 · เป้า 9 กก./ต้น/ปี
+        </div>
+        <label>ชื่อ/สูตรปุ๋ย</label>
+        <select id="pfzFormula" onchange="palmRecalc()"></select>
+        <div class="grid3" style="margin-top:4px">
+          <div><label id="pfzPerTreeLabel">ปุ๋ยรอบนี้ (กก./ต้น)</label>
+            <input type="number" id="pfzPerTree" placeholder="เช่น 3" step="0.1" min="0" oninput="palmRecalc()"></div>
+          <div><label id="pfzBagLabel">ราคาปุ๋ย (บาท/กระสอบ 50กก.)</label>
+            <input type="number" id="pfzBagPrice" placeholder="เช่น 850" min="0" oninput="palmRecalc()"></div>
+          <div id="pfzAccumWrap"><label>ใส่สะสมแล้วปีนี้ (กก./ต้น)</label>
+            <input type="number" id="pfzAccum" placeholder="เช่น 3" step="0.5" min="0" oninput="palmRecalc()"></div>
+        </div>
+        <div class="summary-box box-fert" id="pfzMainSummary">
+          <h3>📊 สรุปการใส่ปุ๋ยหลักรอบนี้</h3>
+          <div class="s-row"><span class="lbl">จำนวนต้นในโซน</span><span class="val" id="pfz_trees">—</span></div>
+          <div class="s-row"><span class="lbl">ปุ๋ยรอบนี้รวม</span><span class="val" id="pfz_total">—</span></div>
+          <div class="s-row"><span class="lbl">กระสอบที่ต้องใช้</span><span class="val" id="pfz_bags">—</span></div>
+          <div class="s-row total"><span class="lbl">ต้นทุนปุ๋ยรอบนี้</span><span class="val" id="pfz_cost">—</span></div>
+          <div class="divider"></div>
+          <div class="s-row"><span class="lbl">สะสมก่อนรอบนี้</span><span class="val" id="pfz_before">—</span></div>
+          <div class="s-row"><span class="lbl">หลังรอบนี้ รวมแล้ว</span><span class="val" id="pfz_after">—</span></div>
+          <div style="margin:8px 0 4px">
+            <div class="prog-wrap"><div class="prog-bar palm" id="pfz_bar" style="width:0%"></div></div>
+            <div class="prog-label" id="pfz_pct">0% ของเป้าทั้งปี</div>
+          </div>
+          <div class="s-row total" id="pfz_remainRow"><span class="lbl">คงเหลือที่ต้องใส่ปีนี้</span><span class="val" id="pfz_remain">—</span></div>
+        </div>
+        <div class="summary-box hidden" id="pfzSupSummary" style="background:#f0f8ff;border:1px solid #90c0e0;border-radius:10px;padding:14px 16px;margin-top:12px">
+          <h3 id="pfzSupTitle" style="font-size:12px;font-weight:600;color:#1a5080;margin-bottom:10px">📊 สรุปการใส่ธาตุอาหารรอง</h3>
+          <div class="s-row"><span class="lbl">จำนวนต้นในโซน</span><span class="val" id="pfzs_trees">—</span></div>
+          <div class="s-row"><span class="lbl">ปริมาณรวมทั้งโซน</span><span class="val" id="pfzs_total">—</span></div>
+          <div class="s-row"><span class="lbl">หน่วยบรรจุที่ต้องใช้</span><span class="val" id="pfzs_bags">—</span></div>
+          <div class="s-row total"><span class="lbl">ต้นทุนรวม</span><span class="val" id="pfzs_cost">—</span></div>
+          <div class="s-row"><span class="lbl">ต้นทุน/ต้น</span><span class="val" id="pfzs_perTree">—</span></div>
+        </div>
+      </div>
+
+      <!-- ตัดแต่งทางใบ -->
+      <div id="palmPruneFields" class="hidden">
+        <div class="grid2">
+          <div><label>จำนวนต้นที่ตัด</label>
+            <input type="number" id="pprTrees" placeholder="0" min="0" oninput="palmRecalc()"></div>
+          <div><label>ค่าแรง/ต้น (บาท)</label>
+            <input type="number" id="pprRate" placeholder="เช่น 15" min="0" step="5" oninput="palmRecalc()"></div>
+        </div>
+        <div class="grid2">
+          <div><label>ค่าอุปกรณ์/ซ่อม (บาท)</label>
+            <input type="number" id="pprEquip" placeholder="0" min="0" oninput="palmRecalc()"></div>
+          <div><label>ค่าใช้จ่ายอื่น (บาท)</label>
+            <input type="number" id="pprOther" placeholder="0" min="0" oninput="palmRecalc()"></div>
+        </div>
+        <div class="summary-box box-prune">
+          <h3>📊 สรุปการตัดแต่งทางใบ</h3>
+          <div class="s-row"><span class="lbl">จำนวนต้น</span><span class="val" id="ppr_trees">0 ต้น</span></div>
+          <div class="s-row"><span class="lbl">ค่าแรง</span><span class="val" id="ppr_labor">0 บาท</span></div>
+          <div class="s-row"><span class="lbl">ค่าอุปกรณ์</span><span class="val" id="ppr_equip">0 บาท</span></div>
+          <div class="s-row total"><span class="lbl">ต้นทุนรวม</span><span class="val" id="ppr_total">0 บาท</span></div>
+          <div class="s-row"><span class="lbl">เฉลี่ย/ต้น</span><span class="val" id="ppr_perTree">— บาท/ต้น</span></div>
+        </div>
+      </div>
+
+      <!-- ดูแลพื้นที่ -->
+      <div id="palmMaintainFields" class="hidden">
+        <div class="grid2">
+          <div><label>จำนวนแรงงาน (คน)</label>
+            <input type="number" id="pmtWorkers" placeholder="0" min="0" oninput="palmRecalc()"></div>
+          <div><label>ค่าแรง/คน/วัน (บาท)</label>
+            <input type="number" id="pmtDayRate" placeholder="เช่น 350" min="0" step="50" oninput="palmRecalc()"></div>
+        </div>
+        <div class="grid2">
+          <div><label>จำนวนวันทำงาน</label>
+            <input type="number" id="pmtDays" placeholder="1" min="1" value="1" oninput="palmRecalc()"></div>
+          <div><label>ค่าวัสดุ/สารเคมี (บาท)</label>
+            <input type="number" id="pmtMaterial" placeholder="0" min="0" oninput="palmRecalc()"></div>
+        </div>
+        <div><label>ค่าเครื่องจักร/อื่นๆ (บาท)</label>
+          <input type="number" id="pmtMachine" placeholder="0" min="0" oninput="palmRecalc()"></div>
+        <div class="summary-box box-maintain">
+          <h3>📊 สรุปค่าใช้จ่ายดูแลพื้นที่</h3>
+          <div class="s-row"><span class="lbl">ค่าแรงทั้งหมด</span><span class="val" id="pmt_labor">0 บาท</span></div>
+          <div class="s-row"><span class="lbl">ค่าวัสดุ/สารเคมี</span><span class="val" id="pmt_material">0 บาท</span></div>
+          <div class="s-row"><span class="lbl">ค่าเครื่องจักร/อื่นๆ</span><span class="val" id="pmt_machine">0 บาท</span></div>
+          <div class="s-row total"><span class="lbl">ต้นทุนรวม</span><span class="val" id="pmt_total">0 บาท</span></div>
+          <div class="s-row"><span class="lbl">เฉลี่ย/ไร่ (1.59 ไร่)</span><span class="val" id="pmt_perRai">0 บาท/ไร่</span></div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="grid2">
+        <div><label>ผู้บันทึก / คนงาน</label>
+          <input type="text" id="palmWorker" placeholder="ชื่อ" value="สน"></div>
+        <div><label>วันที่ดำเนินการ</label>
+          <input type="date" id="palmDate"></div>
+      </div>
+      <label>หมายเหตุ / ลิงก์รูปภาพ</label>
+      <input type="text" id="palmNote" placeholder="บันทึกเพิ่มเติม">
+
+      <!-- รูปภาพ -->
+      <div style="margin-top:12px;border:1px dashed #ccc;border-radius:8px;padding:12px 14px;background:#fafafa">
+        <div style="font-size:12px;font-weight:500;color:#2d6a4f;margin-bottom:8px">📷 รูปภาพหน้างาน (ไม่บังคับ)</div>
+        <input type="file" id="palmPhotoInput" accept="image/*" capture="environment"
+          style="font-size:12px;margin-bottom:8px" onchange="previewPhoto('palm',this)">
+        <div id="palmPhotoPreview" style="display:none;margin-bottom:8px">
+          <img id="palmPreviewImg" style="width:100%;max-height:180px;object-fit:cover;border-radius:6px;border:1px solid #ddd">
+          <div id="palmPhotoInfo" style="font-size:10px;color:#888;margin-top:4px;text-align:center"></div>
+        </div>
+        <div style="font-size:10px;color:#888">รูปจะอัปโหลดไปยัง Google Drive อัตโนมัติ · JPG/PNG ≤ 5 MB</div>
+      </div>
+
+      <button onclick="doPost('palm')">บันทึกลง Google Sheet</button>
+      <button class="sec" onclick="clearForm('palm')">ล้างฟอร์ม</button>
+      <pre id="palmPostResult" class="pre-palm">— ผลลัพธ์จะแสดงที่นี่ —</pre>
+    </div>
+  </div>
+</div><!-- /palmSection -->
+
+<!-- ════════════════════════════════════════════════════════════
+     RUBBER SECTION
+════════════════════════════════════════════════════════════ -->
+<div id="rubberSection" class="hidden">
+  <div class="topbar rubber-bar">
+    <h1>🌿 สวนยางพาราลุงสน — API Tester</h1>
+    <p>บันทึกกิจกรรมสวนยางพารา · ใส่ URL ของ Apps Script (rubber_api.gs)</p>
+  </div>
+  <div class="body">
+
+    <!-- URL -->
+    <div class="section">
+      <h2 style="color:#5a7a1e">ตั้งค่า API URL <span class="tag tag-lime">Rubber</span></h2>
+      <label>Apps Script Web App URL (rubber_api.gs)</label>
+      <input type="url" id="rubberApiUrl" class="url-input" placeholder="https://script.google.com/macros/s/XXXXXXX/exec">
+      <button class="rubber-btn" onclick="saveUrl('rubber')">บันทึก URL</button>
+      <span id="rubberUrlStatus" class="url-status rubber"></span>
+    </div>
+
+    <!-- GET -->
+    <div class="section">
+      <h2 style="color:#5a7a1e">อ่านข้อมูล (GET) <span class="tag tag-lime">doGet</span></h2>
+      <label>เลือกข้อมูลที่ต้องการ</label>
+      <select id="rubberGetAction">
+        <option value="logs">Rubber_Activity_Logs — บันทึกกิจกรรม</option>
+        <option value="summary">Summary — สรุปรายได้/กำไรยาง</option>
+      </select>
+      <button class="rubber-btn" onclick="doGet('rubber')">ดึงข้อมูล</button>
+      <button class="sec" onclick="clearResult('rubberGetResult')">ล้าง</button>
+      <pre id="rubberGetResult" class="pre-rubber">— ผลลัพธ์จะแสดงที่นี่ —</pre>
+    </div>
+
+    <!-- POST -->
+    <div class="section">
+      <h2 style="color:#5a7a1e">บันทึกกิจกรรมยางพารา (POST) <span class="tag tag-amber">doPost</span></h2>
+
+      <label>ประเภทกิจกรรม</label>
+      <div class="activity-tabs" id="rubberActTabs">
+        <button class="tab-btn rubber-tab active" onclick="setRubberActivity('tap',this)">🌿 กรีดยาง</button>
+        <button class="tab-btn rubber-tab" onclick="setRubberActivity('fertilize',this)">🌱 ใส่ปุ๋ย</button>
+        <button class="tab-btn rubber-tab" onclick="setRubberActivity('maintain',this)">🔧 ดูแลพื้นที่</button>
+        <button class="tab-btn rubber-tab" onclick="setRubberActivity('spray',this)">💉 ฉีดพ่น</button>
+        <button class="tab-btn rubber-tab" onclick="setRubberActivity('replant',this)">🌱 ปลูกยางซ่อม</button>
+      </div>
+
+      <label>รหัสแผนงาน</label>
+      <select id="rubberPlanRef" onchange="updateRubberHint(); rubberRecalc()"></select>
+      <p class="hint" id="rubberPlanHint"></p>
+
+      <!-- ══ กรีดยาง ══ -->
+      <div id="rubberTapFields">
+        <div class="grid2">
+          <div><label>น้ำหนักยาง (กก.)</label>
+            <input type="number" id="rtpWeight" placeholder="0" min="0" step="0.5" oninput="rubberRecalc()"></div>
+          <div><label>ราคาขาย/กก. (บาท)</label>
+            <input type="number" id="rtpPrice" placeholder="เช่น 60" step="0.5" min="0" oninput="rubberRecalc()"></div>
+        </div>
+        <div class="grid2">
+          <div><label>ค่าแรงกรีด/กก. (บาท)</label>
+            <input type="number" id="rtpLaborRate" placeholder="เช่น 2.00" step="0.25" min="0" value="2" oninput="rubberRecalc()"></div>
+          <div><label>ค่าใช้จ่ายอื่น (บาท)</label>
+            <input type="number" id="rtpOther" placeholder="0" min="0" oninput="rubberRecalc()"></div>
+        </div>
+        <div class="summary-box box-tap" id="rtpSummary">
+          <h3>📊 สรุปการกรีดยางรอบนี้</h3>
+          <div class="s-row"><span class="lbl">รายได้จากการขายยาง</span><span class="val" id="rtp_revenue">0 บาท</span></div>
+          <div class="s-row cost"><span class="lbl">ค่าแรงกรีดยาง</span><span class="val" id="rtp_labor">0 บาท</span></div>
+          <div class="s-row cost"><span class="lbl">ค่าใช้จ่ายอื่นๆ</span><span class="val" id="rtp_other">0 บาท</span></div>
+          <div class="s-row cost total"><span class="lbl">ต้นทุนรวม</span><span class="val" id="rtp_totalCost">0 บาท</span></div>
+          <div class="s-row total profit-pos" id="rtp_profitRow"><span class="lbl">กำไรสุทธิรอบนี้</span><span class="val inp-profit" id="rtp_profit">0 บาท</span></div>
+        </div>
+      </div>
+
+      <!-- ══ ใส่ปุ๋ยยาง ══ -->
+      <div id="rubberFertFields" class="hidden">
+        <div style="font-size:11px;color:#555;margin-bottom:6px">🌿 ยางทั้งสวน (<span id="rfz_treeCount">200</span> ต้น) · เป้าปุ๋ยหลัก 6 กก./ต้น/ปี (3 รอบ × 2 กก.)</div>
+        <label>ประเภทปุ๋ย</label>
+        <div class="activity-tabs" id="rubberFertTypeTabs">
+          <button class="tab-btn rubber-tab active" onclick="setRubberFertType('main',this)">🌿 ปุ๋ยหลัก</button>
+          <button class="tab-btn rubber-tab" onclick="setRubberFertType('secondary',this)">🪨 ธาตุอาหารรอง</button>
+          <button class="tab-btn rubber-tab" onclick="setRubberFertType('micro',this)">🔬 ธาตุอาหารเสริม</button>
+        </div>
+        <div id="rfzTypeHint" style="font-size:10px;color:#888;margin-bottom:8px;font-style:italic;padding:6px 10px;background:#f5f5f5;border-radius:6px;border-left:3px solid #5a7a1e">
+          ปุ๋ยหลัก N-P-K สูตร 15-15-15 / 13-13-21 / 0-0-60 / 46-0-0 (ยูเรีย) · เป้า 6 กก./ต้น/ปี
+        </div>
+        <label>สูตรปุ๋ย</label>
+        <select id="rfzFormula" onchange="rubberRecalc()"></select>
+        <div class="grid3" style="margin-top:4px">
+          <div><label id="rfzPerTreeLabel">ปุ๋ยรอบนี้ (กก./ต้น)</label>
+            <input type="number" id="rfzPerTree" placeholder="เช่น 2" step="0.1" min="0" oninput="rubberRecalc()"></div>
+          <div><label id="rfzBagLabel">ราคาปุ๋ย (บาท/กระสอบ 50กก.)</label>
+            <input type="number" id="rfzBagPrice" placeholder="เช่น 800" min="0" oninput="rubberRecalc()"></div>
+          <div id="rfzAccumWrap"><label>ใส่สะสมแล้วปีนี้ (กก./ต้น)</label>
+            <input type="number" id="rfzAccum" placeholder="เช่น 2" step="0.5" min="0" oninput="rubberRecalc()"></div>
+        </div>
+        <div class="summary-box box-fert" id="rfzMainSummary">
+          <h3>📊 สรุปการใส่ปุ๋ยหลักรอบนี้</h3>
+          <div class="s-row"><span class="lbl">จำนวนต้นทั้งสวน</span><span class="val" id="rfz_trees">—</span></div>
+          <div class="s-row"><span class="lbl">ปุ๋ยรอบนี้รวม</span><span class="val" id="rfz_total">—</span></div>
+          <div class="s-row"><span class="lbl">กระสอบที่ต้องใช้</span><span class="val" id="rfz_bags">—</span></div>
+          <div class="s-row total"><span class="lbl">ต้นทุนปุ๋ยรอบนี้</span><span class="val" id="rfz_cost">—</span></div>
+          <div class="divider"></div>
+          <div class="s-row"><span class="lbl">สะสมก่อนรอบนี้</span><span class="val" id="rfz_before">—</span></div>
+          <div class="s-row"><span class="lbl">หลังรอบนี้ รวมแล้ว</span><span class="val" id="rfz_after">—</span></div>
+          <div style="margin:8px 0 4px">
+            <div class="prog-wrap"><div class="prog-bar rubber" id="rfz_bar" style="width:0%"></div></div>
+            <div class="prog-label" id="rfz_pct">0% ของเป้าทั้งปี</div>
+          </div>
+          <div class="s-row total" id="rfz_remainRow"><span class="lbl">คงเหลือที่ต้องใส่ปีนี้</span><span class="val" id="rfz_remain">—</span></div>
+        </div>
+        <div class="summary-box hidden" id="rfzSupSummary" style="background:#f0f8ff;border:1px solid #90c0e0;border-radius:10px;padding:14px 16px;margin-top:12px">
+          <h3 id="rfzSupTitle" style="font-size:12px;font-weight:600;color:#1a5080;margin-bottom:10px">📊 สรุปการใส่ธาตุอาหารรอง</h3>
+          <div class="s-row"><span class="lbl">จำนวนต้นทั้งสวน</span><span class="val" id="rfzs_trees">—</span></div>
+          <div class="s-row"><span class="lbl">ปริมาณรวม</span><span class="val" id="rfzs_total">—</span></div>
+          <div class="s-row"><span class="lbl">หน่วยบรรจุที่ต้องใช้</span><span class="val" id="rfzs_bags">—</span></div>
+          <div class="s-row total"><span class="lbl">ต้นทุนรวม</span><span class="val" id="rfzs_cost">—</span></div>
+          <div class="s-row"><span class="lbl">ต้นทุน/ต้น</span><span class="val" id="rfzs_perTree">—</span></div>
+        </div>
+      </div>
+
+      <!-- ══ ดูแลพื้นที่ยาง ══ -->
+      <div id="rubberMaintainFields" class="hidden">
+        <div class="grid2">
+          <div><label>จำนวนแรงงาน (คน)</label>
+            <input type="number" id="rmtWorkers" placeholder="0" min="0" oninput="rubberRecalc()"></div>
+          <div><label>ค่าแรง/คน/วัน (บาท)</label>
+            <input type="number" id="rmtDayRate" placeholder="เช่น 350" min="0" step="50" oninput="rubberRecalc()"></div>
+        </div>
+        <div class="grid2">
+          <div><label>จำนวนวันทำงาน</label>
+            <input type="number" id="rmtDays" placeholder="1" min="1" value="1" oninput="rubberRecalc()"></div>
+          <div><label>ค่าวัสดุ/สารเคมี (บาท)</label>
+            <input type="number" id="rmtMaterial" placeholder="0" min="0" oninput="rubberRecalc()"></div>
+        </div>
+        <div><label>ค่าเครื่องจักร/อื่นๆ (บาท)</label>
+          <input type="number" id="rmtMachine" placeholder="0" min="0" oninput="rubberRecalc()"></div>
+        <div class="summary-box box-maintain">
+          <h3>📊 สรุปค่าใช้จ่ายดูแลพื้นที่</h3>
+          <div class="s-row"><span class="lbl">ค่าแรงทั้งหมด</span><span class="val" id="rmt_labor">0 บาท</span></div>
+          <div class="s-row"><span class="lbl">ค่าวัสดุ/สารเคมี</span><span class="val" id="rmt_material">0 บาท</span></div>
+          <div class="s-row"><span class="lbl">ค่าเครื่องจักร/อื่นๆ</span><span class="val" id="rmt_machine">0 บาท</span></div>
+          <div class="s-row total"><span class="lbl">ต้นทุนรวม</span><span class="val" id="rmt_total">0 บาท</span></div>
+        </div>
+      </div>
+
+      <!-- ══ ฉีดพ่น ══ -->
+      <div id="rubberSprayFields" class="hidden">
+        <label>ประเภทยา/สารเคมี</label>
+        <select id="rspType" onchange="rubberRecalc()">
+          <option value="กันเชื้อรา">กันเชื้อรา (ไฟทอฟธอรา) — Ridomil / Mancozeb</option>
+          <option value="ยาเร่งน้ำยาง">ยาเร่งน้ำยาง (Ethephon/อีเทฟอน)</option>
+          <option value="ยาฆ่าแมลง">ยาฆ่าแมลง / ไรแดง</option>
+          <option value="สารเคมีรวม">ฉีดพ่นสารเคมีรวมหลายประเภท</option>
+          <option value="อื่นๆ">อื่นๆ (ระบุในหมายเหตุ)</option>
+        </select>
+        <div class="grid2">
+          <div><label>จำนวนต้นที่ฉีด</label>
+            <input type="number" id="rspTrees" placeholder="0" min="0" oninput="rubberRecalc()"></div>
+          <div><label>ปริมาณยา/ต้น (มล.)</label>
+            <input type="number" id="rspPerTree" placeholder="เช่น 5" min="0" step="0.5" oninput="rubberRecalc()"></div>
+        </div>
+        <div class="grid2">
+          <div><label>ราคายา/สารเคมีรวม (บาท)</label>
+            <input type="number" id="rspDrugCost" placeholder="0" min="0" oninput="rubberRecalc()"></div>
+          <div><label>ค่าแรงฉีด (บาท)</label>
+            <input type="number" id="rspLabor" placeholder="0" min="0" oninput="rubberRecalc()"></div>
+        </div>
+        <div class="summary-box box-spray">
+          <h3 id="rsp_title">📊 สรุปการฉีดพ่นกันเชื้อรา</h3>
+          <div class="s-row"><span class="lbl">จำนวนต้นที่ฉีด</span><span class="val" id="rsp_trees">0 ต้น</span></div>
+          <div class="s-row"><span class="lbl">ปริมาณยารวม</span><span class="val" id="rsp_totalVol">—</span></div>
+          <div class="s-row"><span class="lbl">ค่าสารเคมี</span><span class="val" id="rsp_drug">0 บาท</span></div>
+          <div class="s-row"><span class="lbl">ค่าแรงฉีด</span><span class="val" id="rsp_labor">0 บาท</span></div>
+          <div class="s-row total"><span class="lbl">ต้นทุนรวม</span><span class="val" id="rsp_total">0 บาท</span></div>
+          <div class="s-row"><span class="lbl">ต้นทุน/ต้น</span><span class="val" id="rsp_perTree">— บาท/ต้น</span></div>
+        </div>
+      </div>
+
+      <!-- ══ ปลูกยางซ่อม ══ -->
+      <div id="rubberReplantFields" class="hidden">
+        <div class="grid2">
+          <div><label>จำนวนต้นที่ปลูก</label>
+            <input type="number" id="rrpTrees" placeholder="0" min="0" oninput="rubberRecalc()"></div>
+          <div><label>พันธุ์ยาง</label>
+            <input type="text" id="rrpVariety" placeholder="เช่น RRIT 251, RRIM 600"></div>
+        </div>
+        <div class="grid3">
+          <div><label>ราคาต้นพันธุ์/ต้น (บาท)</label>
+            <input type="number" id="rrpSeedCost" placeholder="เช่น 80" min="0" oninput="rubberRecalc()"></div>
+          <div><label>ค่าแรงปลูก/ต้น (บาท)</label>
+            <input type="number" id="rrpLaborRate" placeholder="เช่น 20" min="0" oninput="rubberRecalc()"></div>
+          <div><label>ค่าวัสดุรวม (บาท)</label>
+            <input type="number" id="rrpMaterial" placeholder="0" min="0" oninput="rubberRecalc()"></div>
+        </div>
+        <div class="summary-box box-replant">
+          <h3>📊 สรุปการปลูกยางซ่อม</h3>
+          <div class="s-row"><span class="lbl">จำนวนต้นที่ปลูก</span><span class="val" id="rrp_trees">0 ต้น</span></div>
+          <div class="s-row"><span class="lbl">ค่าต้นพันธุ์รวม</span><span class="val" id="rrp_seed">0 บาท</span></div>
+          <div class="s-row"><span class="lbl">ค่าแรงปลูกรวม</span><span class="val" id="rrp_labor">0 บาท</span></div>
+          <div class="s-row"><span class="lbl">ค่าวัสดุ</span><span class="val" id="rrp_material">0 บาท</span></div>
+          <div class="s-row total"><span class="lbl">ต้นทุนรวม</span><span class="val" id="rrp_total">0 บาท</span></div>
+          <div class="s-row"><span class="lbl">ต้นทุน/ต้น</span><span class="val" id="rrp_perTree">— บาท/ต้น</span></div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="grid2">
+        <div><label>ผู้บันทึก / คนงาน</label>
+          <input type="text" id="rubberWorker" placeholder="ชื่อ" value="สน"></div>
+        <div><label>วันที่ดำเนินการ</label>
+          <input type="date" id="rubberDate"></div>
+      </div>
+      <label>หมายเหตุ (ชื่อสาร/พันธุ์/รายละเอียดเพิ่มเติม)</label>
+      <input type="text" id="rubberNote" placeholder="บันทึกเพิ่มเติม">
+
+      <!-- รูปภาพ -->
+      <div style="margin-top:12px;border:1px dashed #ccc;border-radius:8px;padding:12px 14px;background:#fafafa">
+        <div style="font-size:12px;font-weight:500;color:#5a7a1e;margin-bottom:8px">📷 รูปภาพหน้างาน (ไม่บังคับ)</div>
+        <input type="file" id="rubberPhotoInput" accept="image/*" capture="environment"
+          style="font-size:12px;margin-bottom:8px" onchange="previewPhoto('rubber',this)">
+        <div id="rubberPhotoPreview" style="display:none;margin-bottom:8px">
+          <img id="rubberPreviewImg" style="width:100%;max-height:180px;object-fit:cover;border-radius:6px;border:1px solid #ddd">
+          <div id="rubberPhotoInfo" style="font-size:10px;color:#888;margin-top:4px;text-align:center"></div>
+        </div>
+        <div style="font-size:10px;color:#888">รูปจะอัปโหลดไปยัง Google Drive อัตโนมัติ · JPG/PNG ≤ 5 MB</div>
+      </div>
+
+      <button class="rubber-btn" onclick="doPost('rubber')">บันทึกลง Google Sheet</button>
+      <button class="sec" onclick="clearForm('rubber')">ล้างฟอร์ม</button>
+      <pre id="rubberPostResult" class="pre-rubber">— ผลลัพธ์จะแสดงที่นี่ —</pre>
+    </div>
+  </div>
+</div><!-- /rubberSection -->
+
+<script>
+// ══════════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════════
+const PALM_ZONE_TREES  = {'ปาล์มเล็ก':52,'ปาล์มใหญ่':125,'ทั้งหมด':177};
+const PALM_FERT_ANNUAL = 9;
+const PALM_FERT_BAG    = 50;
+const PALM_FARM_RAI    = 1.59;
+
+// ← แก้ตัวเลขนี้ให้ตรงกับจำนวนต้นยางจริง
+const RUBBER_TREES     = 200;
+const RUBBER_FERT_ANNUAL = 6;   // เป้าหมายปุ๋ยหลัก กก./ต้น/ปี
+
+// ══════════════════════════════════════════════
+//  PLAN DATA
+// ══════════════════════════════════════════════
+const PALM_PLANS = {
+  harvest:[
+    {val:'HV-99-S',   label:'HV-99-S — เก็บเกี่ยว Zone A ปาล์มเล็ก (ทุก 20 วัน)', hint:'คัดลูกร่วง 1-2 ลูก / เก็บทะลายสุก'},
+    {val:'HV-99-L',   label:'HV-99-L — เก็บเกี่ยว Zone B ปาล์มใหญ่ (ทุก 20 วัน)', hint:'ใช้เคียวด้ามยาวเกี่ยว'},
+    {val:'HV-99-ALL', label:'HV-99-ALL — เก็บเกี่ยวทั้งหมด Zone A+B รวม', hint:'บันทึกรวมเมื่อไม่สามารถแยก Zone ได้'},
+  ],
+  fertilize:[
+    {val:'FZ-05-S',  label:'FZ-05-S — ใส่ปุ๋ยหลัก Zone A (พฤษภาคม)', hint:'สูตร 15-15-15 หรือ 13-13-21', type:'main'},
+    {val:'FZ-05-L',  label:'FZ-05-L — ใส่ปุ๋ยหลัก Zone B (พฤษภาคม)', hint:'สูตร 14-4-24 หรือ 0-0-60', type:'main'},
+    {val:'FZ-08-S',  label:'FZ-08-S — ใส่ปุ๋ยหลัก Zone A (สิงหาคม)', hint:'สูตร 15-15-15', type:'main'},
+    {val:'FZ-08-L',  label:'FZ-08-L — ใส่ปุ๋ยหลัก Zone B (สิงหาคม)', hint:'สูตร 14-4-24', type:'main'},
+    {val:'FZ-10-S',  label:'FZ-10-S — ใส่ปุ๋ยหลัก Zone A (ตุลาคม)', hint:'สูตร 13-13-21', type:'main'},
+    {val:'FZ-10-L',  label:'FZ-10-L — ใส่ปุ๋ยหลัก Zone B (ตุลาคม)', hint:'สูตร 14-4-24 หรือ 0-0-60', type:'main'},
+    {val:'FZ-ALL',   label:'FZ-ALL — ใส่ปุ๋ยหลักทั้งหมด Zone A+B รวม', hint:'บันทึกรวม', type:'main'},
+    {val:'FZ-06-A',  label:'FZ-06-A — แมกนีเซียม (Kieserite)', hint:'1 กก./ต้น', type:'secondary'},
+    {val:'FZ-06-B',  label:'FZ-06-B — กำมะถัน (Sulphur)', hint:'0.5–1 กก./ต้น', type:'secondary'},
+    {val:'FZ-06-C',  label:'FZ-06-C — โดโลไมท์ (Dolomite)', hint:'2–3 กก./ต้น', type:'secondary'},
+    {val:'FZ-07-A',  label:'FZ-07-A — โบรอน (Borax)', hint:'0.1 กก./ต้น', type:'micro'},
+    {val:'FZ-07-B',  label:'FZ-07-B — สังกะสี (Zinc Sulphate)', hint:'0.1–0.2 กก./ต้น', type:'micro'},
+    {val:'FZ-07-C',  label:'FZ-07-C — ธาตุอาหารเสริมรวม (ฉีดพ่นทางใบ)', hint:'ตามอัตราผู้ผลิต', type:'micro'},
+  ],
+  prune:[
+    {val:'MT-99-S',   label:'MT-99-S — ตัดแต่งทางใบ Zone A ปาล์มเล็ก', hint:'เหลือทางใบรองทะลาย 1-2 ใบ'},
+    {val:'MT-99-L',   label:'MT-99-L — ตัดแต่งทางใบ Zone B ปาล์มใหญ่', hint:'ตัดตามรอบเก็บเกี่ยว'},
+    {val:'MT-99-ALL', label:'MT-99-ALL — ตัดแต่งทางใบทั้งสวน', hint:'บันทึกรวม'},
+  ],
+  maintain:[
+    {val:'MT-01-A', label:'MT-01-A — ตัดหญ้า/วัชพืช ทั้งสวน', hint:'ใช้เครื่องตัดหญ้า'},
+    {val:'MT-02-A', label:'MT-02-A — กำจัดหญ้าด้วยสารเคมี', hint:'ระวังโคนต้นปาล์ม'},
+    {val:'MT-03-A', label:'MT-03-A — ซ่อมแซมทางน้ำ/ท่อระบาย', hint:'ตรวจช่วงฤดูฝน'},
+    {val:'MT-04-A', label:'MT-04-A — ลอกคลอง/กำจัดสิ่งกีดขวาง', hint:'ก่อนฤดูฝน'},
+    {val:'MT-05-A', label:'MT-05-A — ปลูกซ่อมต้นที่ตาย/โตช้า', hint:'เลือกพันธุ์เดิม'},
+  ],
+};
+
+const RUBBER_PLANS = {
+  tap:[
+    {val:'RB-HV-01', label:'RB-HV-01 — กรีดยางรอบเช้า (ทุก 2-3 วัน)', hint:'กรีดส่งน้ำยางสด/ยางก้อนถ้วย'},
+    {val:'RB-HV-02', label:'RB-HV-02 — กรีดยางแผ่นดิบ', hint:'กวาดยางแผ่น → รีด → ตากแห้ง'},
+    {val:'RB-HV-03', label:'RB-HV-03 — ขายยางก้อนถ้วยสะสม', hint:'รวบรวมก้อนยางถ้วยแล้วขายรวม'},
+    {val:'RB-HV-ALL',label:'RB-HV-ALL — กรีดยางรวมทั้งสวน', hint:'บันทึกรวมทั้งสวน'},
+  ],
+  fertilize:[
+    {val:'RB-FZ-05',  label:'RB-FZ-05 — ใส่ปุ๋ยหลัก รอบ 1 (พ.ค.-มิ.ย.)', hint:'ต้นฤดูฝน · สูตร 15-15-15 หรือ 46-0-0', type:'main'},
+    {val:'RB-FZ-08',  label:'RB-FZ-08 — ใส่ปุ๋ยหลัก รอบ 2 (ส.ค.)', hint:'กลางฤดูฝน · สูตร 13-13-21', type:'main'},
+    {val:'RB-FZ-10',  label:'RB-FZ-10 — ใส่ปุ๋ยหลัก รอบ 3 (ต.ค.-พ.ย.)', hint:'ปลายฤดูฝน · สูตร 0-0-60 หรือ 13-13-21', type:'main'},
+    {val:'RB-FZ-SEC', label:'RB-FZ-SEC — ธาตุอาหารรอง (Mg, S, Ca)', hint:'โดโลไมท์/แมกนีเซียม ตามอาการขาดธาตุ', type:'secondary'},
+    {val:'RB-FZ-MIC', label:'RB-FZ-MIC — ธาตุอาหารเสริม (B, Zn, Cu)', hint:'ใส่ปีละ 1-2 ครั้ง ตามอาการขาดธาตุ', type:'micro'},
+  ],
+  maintain:[
+    {val:'RB-MT-01', label:'RB-MT-01 — ตัดหญ้า/วัชพืช (ทุก 3 เดือน)', hint:'ใช้เครื่องตัดหญ้าหรือเคมี'},
+    {val:'RB-MT-02', label:'RB-MT-02 — กำจัดวัชพืชด้วยสารเคมี', hint:'ระวังโคนต้นยาง'},
+    {val:'RB-MT-03', label:'RB-MT-03 — ซ่อมแซมทาง/ท่อระบาย', hint:'ตรวจช่วงฤดูฝน'},
+    {val:'RB-MT-04', label:'RB-MT-04 — ลอกคลอง/กำจัดสิ่งกีดขวาง', hint:'ก่อนฤดูฝน'},
+    {val:'RB-MT-05', label:'RB-MT-05 — งานทั่วไป/เบ็ดเตล็ด', hint:''},
+  ],
+  spray:[
+    {val:'RB-SP-01', label:'RB-SP-01 — ฉีดกันเชื้อรา (ไฟทอฟธอรา)', hint:'Ridomil/Mancozeb ทาบริเวณรอยกรีด'},
+    {val:'RB-SP-02', label:'RB-SP-02 — ยาเร่งน้ำยาง (Ethephon/Ethrel)', hint:'ความเข้มข้น 2.5% ทาบนรอยกรีด'},
+    {val:'RB-SP-03', label:'RB-SP-03 — ยาฆ่าแมลง/ไรแดง', hint:'กำจัดไรแดง เพลี้ยอ่อน'},
+    {val:'RB-SP-04', label:'RB-SP-04 — ฉีดพ่นสารเคมีรวม', hint:'บันทึกรวมหลายประเภท'},
+  ],
+  replant:[
+    {val:'RB-PL-01', label:'RB-PL-01 — ปลูกซ่อมแทนต้นตาย', hint:'เลือกพันธุ์เดิม RRIT 251 / RRIM 600'},
+    {val:'RB-PL-02', label:'RB-PL-02 — ปลูกเสริมพื้นที่ว่าง', hint:'เพิ่มความหนาแน่นในแปลงที่โล่ง'},
+  ],
+};
+
+const PALM_TYPE_LABELS   = {harvest:'เก็บเกี่ยว',fertilize:'ใส่ปุ๋ย',prune:'ตัดแต่งทางใบ',maintain:'ดูแลพื้นที่'};
+const RUBBER_TYPE_LABELS = {tap:'กรีดยาง',fertilize:'ใส่ปุ๋ย',maintain:'ดูแลพื้นที่',spray:'ฉีดพ่น',replant:'ปลูกยางซ่อม'};
+
+const FERT_TYPES = {
+  main:      {label:'ปุ๋ยหลัก N-P-K', hint:'สูตร 15-15-15 / 13-13-21 / 14-4-24 / 0-0-60', bagKg:50, perTreeLabel:'ปุ๋ยรอบนี้ (กก./ต้น)', bagLabel:'ราคา (บาท/กระสอบ 50กก.)', showAccum:true, showProgress:true},
+  secondary: {label:'ธาตุอาหารรอง',   hint:'Mg 1 กก./ต้น · S 0.5-1 กก./ต้น · โดโลไมท์ 2-3 กก./ต้น', bagKg:25, perTreeLabel:'ปริมาณรอบนี้ (กก./ต้น)', bagLabel:'ราคา (บาท/ถุง 25กก.)', showAccum:false, showProgress:false},
+  micro:     {label:'ธาตุอาหารเสริม', hint:'B 0.1 กก./ต้น · Zn 0.1-0.2 กก./ต้น', bagKg:10, perTreeLabel:'ปริมาณรอบนี้ (กก./ต้น)', bagLabel:'ราคา (บาท/ถุง 10กก.)', showAccum:false, showProgress:false},
+};
+
+const RUBBER_FERT_TYPES = {
+  main:      {label:'ปุ๋ยหลัก N-P-K ยาง', hint:'สูตร 15-15-15 / 13-13-21 / 0-0-60 / 46-0-0 (ยูเรีย) · เป้า 6 กก./ต้น/ปี (3 รอบ × 2 กก.)', bagKg:50, perTreeLabel:'ปุ๋ยรอบนี้ (กก./ต้น)', bagLabel:'ราคา (บาท/กระสอบ 50กก.)', showAccum:true, showProgress:true},
+  secondary: {label:'ธาตุอาหารรองยาง',   hint:'โดโลไมท์ 2 กก./ต้น · แมกนีเซียม 1 กก./ต้น · กำมะถัน 0.5 กก./ต้น', bagKg:25, perTreeLabel:'ปริมาณรอบนี้ (กก./ต้น)', bagLabel:'ราคา (บาท/ถุง 25กก.)', showAccum:false, showProgress:false},
+  micro:     {label:'ธาตุอาหารเสริมยาง', hint:'โบรอน 0.1 กก./ต้น · สังกะสี 0.1-0.2 กก./ต้น', bagKg:10, perTreeLabel:'ปริมาณรอบนี้ (กก./ต้น)', bagLabel:'ราคา (บาท/ถุง 10กก.)', showAccum:false, showProgress:false},
+};
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let currentFarm          = 'palm';
+let currentPalmActivity  = 'harvest';
+let currentRubberActivity = 'tap';
+let currentPalmFertType  = 'main';
+let currentRubberFertType = 'main';
+
+let PALM_API_URL   = localStorage.getItem('palmApiUrl')   || '';
+let RUBBER_API_URL = localStorage.getItem('rubberApiUrl') || '';
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+document.getElementById('palmDate').value   = new Date().toISOString().split('T')[0];
+document.getElementById('rubberDate').value = new Date().toISOString().split('T')[0];
+document.getElementById('rfz_treeCount').textContent = RUBBER_TREES;
+
+if (PALM_API_URL) {
+  document.getElementById('palmApiUrl').value = PALM_API_URL;
+  document.getElementById('palmUrlStatus').textContent = '✓ URL บันทึกแล้ว';
+}
+if (RUBBER_API_URL) {
+  document.getElementById('rubberApiUrl').value = RUBBER_API_URL;
+  document.getElementById('rubberUrlStatus').textContent = '✓ URL บันทึกแล้ว';
+}
+
+setPalmPlanOptions('harvest');
+setRubberPlanOptions('tap');
+palmRecalc();
+
+// ══════════════════════════════════════════════
+//  FARM SWITCH
+// ══════════════════════════════════════════════
+function switchFarm(farm) {
+  currentFarm = farm;
+  document.getElementById('palmSection').classList.toggle('hidden', farm !== 'palm');
+  document.getElementById('rubberSection').classList.toggle('hidden', farm !== 'rubber');
+  document.getElementById('palmFarmBtn').classList.toggle('active', farm === 'palm');
+  document.getElementById('rubberFarmBtn').classList.toggle('active', farm === 'rubber');
+}
+
+// ══════════════════════════════════════════════
+//  SHARED UTILS
+// ══════════════════════════════════════════════
+function saveUrl(farm) {
+  if (farm === 'palm') {
+    PALM_API_URL = document.getElementById('palmApiUrl').value.trim();
+    localStorage.setItem('palmApiUrl', PALM_API_URL);
+    document.getElementById('palmUrlStatus').textContent = '✓ บันทึกแล้ว';
+  } else {
+    RUBBER_API_URL = document.getElementById('rubberApiUrl').value.trim();
+    localStorage.setItem('rubberApiUrl', RUBBER_API_URL);
+    document.getElementById('rubberUrlStatus').textContent = '✓ บันทึกแล้ว';
+  }
+}
+
+function clearResult(id) { document.getElementById(id).textContent = '— ล้างแล้ว —'; }
+
+function thb(v) { return v.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})+' บาท'; }
+function kg(v)  { return v.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})+' กก.'; }
+function set(id,txt){ const el=document.getElementById(id); if(el) el.textContent=txt; }
+function n(id){ return parseFloat(document.getElementById(id)?.value)||0; }
+
+function previewPhoto(farm, input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5*1024*1024) { alert('รูปใหญ่เกิน 5 MB'); input.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const prefix = farm === 'palm' ? 'palm' : 'rubber';
+    document.getElementById(prefix+'PreviewImg').src = e.target.result;
+    document.getElementById(prefix+'PhotoPreview').style.display = 'block';
+    document.getElementById(prefix+'PhotoInfo').textContent =
+      file.name + ' · ' + (file.size/1024).toFixed(0) + ' KB';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function uploadPhoto(farm, logId) {
+  const inputId = farm === 'palm' ? 'palmPhotoInput' : 'rubberPhotoInput';
+  const input   = document.getElementById(inputId);
+  if (!input.files.length) return null;
+  const file    = input.files[0];
+  const apiUrl  = farm === 'palm' ? PALM_API_URL : RUBBER_API_URL;
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async e => {
+      const base64 = e.target.result.split(',')[1];
+      try {
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          body: JSON.stringify({ action:'uploadPhoto', logId, base64, mimeType:file.type,
+            fileName: file.name.replace(/\.[^/.]+$/,'')+'_'+logId })
+        });
+        resolve(await res.json());
+      } catch(err) { reject(err); }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function doGet(farm) {
+  const apiUrl = farm === 'palm' ? PALM_API_URL : RUBBER_API_URL;
+  const action = document.getElementById(farm+'GetAction').value;
+  const el     = document.getElementById(farm+'GetResult');
+  if (!apiUrl) { alert('กรุณาใส่ API URL ก่อน'); return; }
+  el.textContent = 'กำลังโหลด...';
+  try {
+    const res = await fetch(`${apiUrl}?action=${action}`);
+    el.textContent = JSON.stringify(await res.json(), null, 2);
+  } catch(e) { el.textContent = 'Error: ' + e.message; }
+}
+
+// ══════════════════════════════════════════════
+//  PALM — ACTIVITY & PLAN
+// ══════════════════════════════════════════════
+function setPalmActivity(act, btn) {
+  currentPalmActivity = act;
+  document.querySelectorAll('#palmActTabs .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  setPalmPlanOptions(act);
+  ['palmHarvestFields','palmFertFields','palmPruneFields','palmMaintainFields'].forEach(id =>
+    document.getElementById(id).classList.add('hidden'));
+  const map = {harvest:'palmHarvestFields',fertilize:'palmFertFields',prune:'palmPruneFields',maintain:'palmMaintainFields'};
+  document.getElementById(map[act]).classList.remove('hidden');
+  palmRecalc();
+}
+
+function setPalmFertType(type, btn) {
+  currentPalmFertType = type;
+  document.querySelectorAll('#palmFertTypeTabs .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = PALM_PLANS.fertilize.filter(p => p.type === type);
+  const opts = filtered.map(p => `<option value="${p.val}" data-hint="${p.hint}">${p.label}</option>`).join('');
+  document.getElementById('palmPlanRef').innerHTML = opts;
+  document.getElementById('pfzFormula').innerHTML  = opts;
+  updatePalmFzHint();
+  palmRecalc();
+}
+
+function setPalmPlanOptions(act) {
+  const sel = document.getElementById('palmPlanRef');
+  if (act === 'fertilize') {
+    const filtered = PALM_PLANS.fertilize.filter(p => p.type === currentPalmFertType);
+    const opts = filtered.map(p => `<option value="${p.val}" data-hint="${p.hint}">${p.label}</option>`).join('');
+    sel.innerHTML = opts;
+    document.getElementById('pfzFormula').innerHTML = opts;
+    updatePalmFzHint();
+  } else {
+    sel.innerHTML = PALM_PLANS[act].map(p => `<option value="${p.val}" data-hint="${p.hint}">${p.label}</option>`).join('');
+    updatePalmHint();
+  }
+}
+
+function updatePalmHint() {
+  const sel = document.getElementById('palmPlanRef');
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById('palmPlanHint').textContent = opt ? opt.dataset.hint : '';
+}
+
+function updatePalmFzHint() {
+  const ft = FERT_TYPES[currentPalmFertType];
+  document.getElementById('pfzTypeHint').textContent = ft.hint;
+  document.getElementById('pfzPerTreeLabel').textContent = ft.perTreeLabel;
+  document.getElementById('pfzBagLabel').textContent = ft.bagLabel;
+  document.getElementById('pfzAccumWrap').style.display = ft.showAccum ? '' : 'none';
+  document.getElementById('pfzMainSummary').classList.toggle('hidden', !ft.showProgress);
+  document.getElementById('pfzSupSummary').classList.toggle('hidden',   ft.showProgress);
+  if (!ft.showProgress) document.getElementById('pfzSupTitle').textContent = '📊 สรุปการใส่' + ft.label;
+}
+
+// ══════════════════════════════════════════════
+//  PALM — RECALC
+// ══════════════════════════════════════════════
+function palmRecalc() {
+  const act = currentPalmActivity;
+  if (act === 'harvest')   palmCalcHarvest();
+  else if (act === 'fertilize') palmCalcFert();
+  else if (act === 'prune')    palmCalcPrune();
+  else palmCalcMaintain();
+}
+
+function palmCalcHarvest() {
+  const w=n('phvWeight'),p=n('phvPrice'),lr=n('phvLaborRate'),oth=n('phvOther');
+  const rev=w*p, labor=w*lr, cost=labor+oth, profit=rev-cost;
+  set('phv_revenue',thb(rev)); set('phv_labor',thb(labor));
+  set('phv_other',thb(oth)); set('phv_totalCost',thb(cost)); set('phv_profit',thb(profit));
+  const row=document.getElementById('phv_profitRow');
+  if(row) row.className='s-row total '+(profit>=0?'profit-pos':'profit-neg');
+}
+
+function palmCalcFert() {
+  const zone=document.getElementById('palmZone').value;
+  const trees=PALM_ZONE_TREES[zone]||0;
+  const perTree=n('pfzPerTree'),bagPrice=n('pfzBagPrice'),accum=n('pfzAccum');
+  const ft=FERT_TYPES[currentPalmFertType];
+  const bags=Math.ceil((perTree*trees)/ft.bagKg), cost=bags*bagPrice;
+  if (currentPalmFertType === 'main') {
+    const afterThis=(accum+perTree)*trees;
+    const annual=PALM_FERT_ANNUAL*trees;
+    const remain=Math.max(0,PALM_FERT_ANNUAL-accum-perTree);
+    const pct=Math.min(100,annual>0?afterThis/annual*100:0);
+    set('pfz_trees',trees+' ต้น'); set('pfz_total',perTree>0?kg(perTree*trees):'—');
+    set('pfz_bags',bags>0?bags+' กระสอบ 50กก.':'—'); set('pfz_cost',cost>0?thb(cost):'—');
+    set('pfz_before',kg(accum*trees)); set('pfz_after',kg(afterThis));
+    const bar=document.getElementById('pfz_bar'); if(bar) bar.style.width=pct.toFixed(0)+'%';
+    set('pfz_pct',pct.toFixed(0)+'% ของเป้าทั้งปี');
+    const remRow=document.getElementById('pfz_remainRow');
+    if(remain>0){set('pfz_remain',remain.toFixed(1)+' กก./ต้น (รวม '+kg(remain*trees)+')');if(remRow)remRow.style.color='#c0392b';}
+    else{set('pfz_remain','✅ ครบโควต้าแล้ว');if(remRow)remRow.style.color='#0f6e56';}
+  } else {
+    const unitLabel=currentPalmFertType==='secondary'?'ถุง 25กก.':'ถุง 10กก.';
+    set('pfzs_trees',trees+' ต้น'); set('pfzs_total',perTree>0?kg(perTree*trees):'—');
+    set('pfzs_bags',bags>0?bags+' '+unitLabel:'—'); set('pfzs_cost',cost>0?thb(cost):'—');
+    set('pfzs_perTree',cost>0&&trees>0?thb(cost/trees).replace(' บาท','')+' บาท/ต้น':'—');
+  }
+}
+
+function palmCalcPrune() {
+  const trees=n('pprTrees'),rate=n('pprRate'),equip=n('pprEquip'),other=n('pprOther');
+  const labor=trees*rate, total=labor+equip+other;
+  set('ppr_trees',trees>0?trees+' ต้น':'0 ต้น'); set('ppr_labor',thb(labor));
+  set('ppr_equip',thb(equip)); set('ppr_total',thb(total));
+  set('ppr_perTree',trees>0?thb(total/trees).replace(' บาท','')+' บาท/ต้น':'— บาท/ต้น');
+}
+
+function palmCalcMaintain() {
+  const w=n('pmtWorkers'),dr=n('pmtDayRate'),d=n('pmtDays')||1,mat=n('pmtMaterial'),mach=n('pmtMachine');
+  const labor=w*dr*d, total=labor+mat+mach;
+  set('pmt_labor',thb(labor)); set('pmt_material',thb(mat));
+  set('pmt_machine',thb(mach)); set('pmt_total',thb(total));
+  set('pmt_perRai',PALM_FARM_RAI>0?thb(total/PALM_FARM_RAI).replace(' บาท','')+' บาท/ไร่':'—');
+}
+
+// ══════════════════════════════════════════════
+//  PALM — POST
+// ══════════════════════════════════════════════
+async function doPost(farm) {
+  if (farm === 'palm') return palmPost();
+  return rubberPost();
+}
+
+async function palmPost() {
+  if (!PALM_API_URL) { alert('กรุณาใส่ API URL ก่อน'); return; }
+  const el = document.getElementById('palmPostResult');
+  el.textContent = 'กำลังส่งข้อมูล...';
+  const zone = document.getElementById('palmZone').value;
+  const trees = PALM_ZONE_TREES[zone] || 0;
+  const act   = currentPalmActivity;
+  let revenue=0, cost=0, profit=0, extraNote='';
+
+  if (act === 'harvest') {
+    const w=n('phvWeight'),p=n('phvPrice'),lr=n('phvLaborRate'),oth=n('phvOther');
+    revenue=w*p; cost=w*lr+oth; profit=revenue-cost;
+    extraNote=`ค่าแรง ${thb(w*lr)} + อื่น ${thb(oth)}`;
+  } else if (act === 'fertilize') {
+    const perTree=n('pfzPerTree'),bagPrice=n('pfzBagPrice'),accum=n('pfzAccum');
+    const ft=FERT_TYPES[currentPalmFertType];
+    const bags=Math.ceil((perTree*trees)/ft.bagKg); cost=bags*bagPrice;
+    if (currentPalmFertType==='main') {
+      const remain=Math.max(0,PALM_FERT_ANNUAL-accum-perTree);
+      extraNote=`[${ft.label}] ${perTree} กก./ต้น สะสม ${(accum+perTree).toFixed(1)} คงเหลือ ${remain.toFixed(1)} กก./ต้น`;
+    } else {
+      extraNote=`[${ft.label}] ${perTree} กก./ต้น รวม ${(perTree*trees).toFixed(1)} กก. ต้นทุน ${thb(cost)}`;
+    }
+  } else if (act === 'prune') {
+    const tr=n('pprTrees'),rate=n('pprRate'),equip=n('pprEquip'),other=n('pprOther');
+    cost=tr*rate+equip+other;
+    extraNote=`ตัด ${tr} ต้น ค่าแรง ${thb(tr*rate)}`;
+  } else {
+    const w=n('pmtWorkers'),dr=n('pmtDayRate'),d=n('pmtDays')||1,mat=n('pmtMaterial'),mach=n('pmtMachine');
+    cost=w*dr*d+mat+mach;
+    extraNote=`${w} คน × ${d} วัน ค่าวัสดุ ${thb(mat)}`;
+  }
+
+  const body = {
+    action:'addLog',
+    data:{
+      'ประเภทกิจกรรม':          PALM_TYPE_LABELS[act],
+      'รหัสแผนงาน (Plan_Ref)':  document.getElementById('palmPlanRef').value,
+      'โซนพื้นที่':              zone,
+      'น้ำหนักที่ได้จริง (กก.)': act==='harvest'?n('phvWeight'):0,
+      'ราคาขายต่อหน่วย':         act==='harvest'?n('phvPrice'):0,
+      'รายได้รวม (จริง)':        act==='harvest'?revenue:0,
+      'ต้นทุนที่จ่ายจริง':       cost,
+      'กำไรสุทธิรอบนี้':          profit,
+      'ผู้บันทึก/คนงาน':          document.getElementById('palmWorker').value,
+      'วันที่ดำเนินการ':           document.getElementById('palmDate').value,
+      'หมายเหตุ/รูปภาพ':          [document.getElementById('palmNote').value, extraNote].filter(Boolean).join(' | '),
+      'ปุ๋ย (กก./ต้น) รอบนี้':   act==='fertilize'?n('pfzPerTree'):0,
+      'ปุ๋ยสะสมแล้ว (กก./ต้น)':   act==='fertilize'?(n('pfzAccum')+n('pfzPerTree')):0,
+      'ปุ๋ยคงเหลือ (กก./ต้น)':    act==='fertilize'?Math.max(0,PALM_FERT_ANNUAL-n('pfzAccum')-n('pfzPerTree')):0,
+      'กระสอบปุ๋ยที่ใช้':         act==='fertilize'?Math.ceil((n('pfzPerTree')*trees)/(FERT_TYPES[currentPalmFertType]?.bagKg||50)):0,
+      'จำนวนต้นที่ตัดแต่ง':       act==='prune'?n('pprTrees'):0,
+      'ค่าแรง/ต้น (บาท)':         act==='prune'?n('pprRate'):0,
+      'จำนวนแรงงาน (คน)':         act==='maintain'?n('pmtWorkers'):0,
+      'จำนวนวัน':                  act==='maintain'?(n('pmtDays')||1):0,
+      'ค่าแรง/คน/วัน (บาท)':      act==='maintain'?n('pmtDayRate'):0,
+      'ค่าวัสดุ/สารเคมี':          act==='maintain'?n('pmtMaterial'):0,
+      'ค่าเครื่องจักร/อื่นๆ':      act==='maintain'?n('pmtMachine'):0,
+    }
+  };
+
+  try {
+    const res  = await fetch(PALM_API_URL, {method:'POST', body:JSON.stringify(body)});
+    const json = await res.json();
+    el.textContent = JSON.stringify(json, null, 2);
+    if (json.status === 'ok') {
+      el.textContent += `\n\n✅ บันทึกสำเร็จ! Log ID: ${json.logId}`;
+      el.textContent += `\nประเภท  : ${PALM_TYPE_LABELS[act]}`;
+      if (act==='harvest') { el.textContent += `\nรายได้  : ฿${thb(revenue)}\nกำไร    : ฿${thb(profit)}`; }
+      else { el.textContent += `\nต้นทุน  : ฿${thb(cost)}\nรายได้  : — (กิจกรรมต้นทุน)`; }
+      // อัปโหลดรูป
+      const photoInput = document.getElementById('palmPhotoInput');
+      if (photoInput.files.length > 0) {
+        el.textContent += '\n\n📷 กำลังอัปโหลดรูปภาพ...';
+        try {
+          const pr = await uploadPhoto('palm', json.logId);
+          el.textContent += pr?.status==='ok' ? `\n✅ อัปโหลดรูปสำเร็จ!\n🔗 ${pr.url}` : `\n⚠️ อัปโหลดรูปไม่สำเร็จ`;
+          if (pr?.status==='ok') { photoInput.value=''; document.getElementById('palmPhotoPreview').style.display='none'; }
+        } catch(pe) { el.textContent += '\n⚠️ ' + pe.message; }
+      }
+    }
+  } catch(e) { el.textContent = 'Error: ' + e.message; }
+}
+
+function clearForm(farm) {
+  if (farm === 'palm') {
+    ['phvWeight','phvPrice','phvLaborRate','phvOther','pfzPerTree','pfzBagPrice','pfzAccum',
+     'pprTrees','pprRate','pprEquip','pprOther','pmtWorkers','pmtDayRate','pmtDays','pmtMaterial','pmtMachine','palmNote']
+    .forEach(id=>{ const el=document.getElementById(id); if(el&&id!=='phvLaborRate'&&id!=='pmtDays') el.value=''; });
+    document.getElementById('phvLaborRate').value='1';
+    document.getElementById('pmtDays').value='1';
+    document.getElementById('palmDate').value=new Date().toISOString().split('T')[0];
+    document.getElementById('palmPhotoInput').value='';
+    document.getElementById('palmPhotoPreview').style.display='none';
+    palmRecalc(); clearResult('palmPostResult');
+  } else {
+    ['rtpWeight','rtpPrice','rtpLaborRate','rtpOther','rfzPerTree','rfzBagPrice','rfzAccum',
+     'rmtWorkers','rmtDayRate','rmtDays','rmtMaterial','rmtMachine',
+     'rspTrees','rspPerTree','rspDrugCost','rspLabor',
+     'rrpTrees','rrpVariety','rrpSeedCost','rrpLaborRate','rrpMaterial','rubberNote']
+    .forEach(id=>{ const el=document.getElementById(id); if(el&&id!=='rtpLaborRate'&&id!=='rmtDays') el.value=''; });
+    document.getElementById('rtpLaborRate').value='2';
+    document.getElementById('rmtDays').value='1';
+    document.getElementById('rubberDate').value=new Date().toISOString().split('T')[0];
+    document.getElementById('rubberPhotoInput').value='';
+    document.getElementById('rubberPhotoPreview').style.display='none';
+    rubberRecalc(); clearResult('rubberPostResult');
+  }
+}
+
+// ══════════════════════════════════════════════
+//  RUBBER — ACTIVITY & PLAN
+// ══════════════════════════════════════════════
+function setRubberActivity(act, btn) {
+  currentRubberActivity = act;
+  document.querySelectorAll('#rubberActTabs .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  setRubberPlanOptions(act);
+  ['rubberTapFields','rubberFertFields','rubberMaintainFields','rubberSprayFields','rubberReplantFields']
+    .forEach(id => document.getElementById(id).classList.add('hidden'));
+  const map = {tap:'rubberTapFields',fertilize:'rubberFertFields',maintain:'rubberMaintainFields',
+               spray:'rubberSprayFields',replant:'rubberReplantFields'};
+  document.getElementById(map[act]).classList.remove('hidden');
+  rubberRecalc();
+}
+
+function setRubberFertType(type, btn) {
+  currentRubberFertType = type;
+  document.querySelectorAll('#rubberFertTypeTabs .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = RUBBER_PLANS.fertilize.filter(p => p.type === type);
+  const opts = filtered.map(p => `<option value="${p.val}" data-hint="${p.hint}">${p.label}</option>`).join('');
+  document.getElementById('rubberPlanRef').innerHTML = opts;
+  document.getElementById('rfzFormula').innerHTML    = opts;
+  ['rfzPerTree','rfzBagPrice','rfzAccum'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  updateRubberFzHint();
+  rubberRecalc();
+}
+
+function setRubberPlanOptions(act) {
+  const sel = document.getElementById('rubberPlanRef');
+  if (act === 'fertilize') {
+    const filtered = RUBBER_PLANS.fertilize.filter(p => p.type === currentRubberFertType);
+    const opts = filtered.map(p => `<option value="${p.val}" data-hint="${p.hint}">${p.label}</option>`).join('');
+    sel.innerHTML = opts;
+    document.getElementById('rfzFormula').innerHTML = opts;
+    updateRubberFzHint();
+  } else {
+    const plans = RUBBER_PLANS[act] || [];
+    sel.innerHTML = plans.map(p => `<option value="${p.val}" data-hint="${p.hint}">${p.label}</option>`).join('');
+    updateRubberHint();
+  }
+}
+
+function updateRubberHint() {
+  const sel = document.getElementById('rubberPlanRef');
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById('rubberPlanHint').textContent = opt ? opt.dataset.hint : '';
+}
+
+function updateRubberFzHint() {
+  const ft = RUBBER_FERT_TYPES[currentRubberFertType];
+  document.getElementById('rfzTypeHint').textContent = ft.hint;
+  document.getElementById('rfzPerTreeLabel').textContent = ft.perTreeLabel;
+  document.getElementById('rfzBagLabel').textContent = ft.bagLabel;
+  document.getElementById('rfzAccumWrap').style.display = ft.showAccum ? '' : 'none';
+  document.getElementById('rfzMainSummary').classList.toggle('hidden', !ft.showProgress);
+  document.getElementById('rfzSupSummary').classList.toggle('hidden',   ft.showProgress);
+  if (!ft.showProgress) document.getElementById('rfzSupTitle').textContent = '📊 สรุปการใส่' + ft.label;
+}
+
+// ══════════════════════════════════════════════
+//  RUBBER — RECALC
+// ══════════════════════════════════════════════
+function rubberRecalc() {
+  const act = currentRubberActivity;
+  if (act === 'tap')        rubberCalcTap();
+  else if (act === 'fertilize') rubberCalcFert();
+  else if (act === 'maintain')  rubberCalcMaintain();
+  else if (act === 'spray')     rubberCalcSpray();
+  else rubberCalcReplant();
+}
+
+function rubberCalcTap() {
+  const w=n('rtpWeight'),p=n('rtpPrice'),lr=n('rtpLaborRate'),oth=n('rtpOther');
+  const rev=w*p, labor=w*lr, cost=labor+oth, profit=rev-cost;
+  set('rtp_revenue',thb(rev)); set('rtp_labor',thb(labor));
+  set('rtp_other',thb(oth)); set('rtp_totalCost',thb(cost)); set('rtp_profit',thb(profit));
+  const row=document.getElementById('rtp_profitRow');
+  if(row) row.className='s-row total '+(profit>=0?'profit-pos':'profit-neg');
+}
+
+function rubberCalcFert() {
+  const trees = RUBBER_TREES;
+  const perTree=n('rfzPerTree'),bagPrice=n('rfzBagPrice'),accum=n('rfzAccum');
+  const ft = RUBBER_FERT_TYPES[currentRubberFertType];
+  const bags=Math.ceil((perTree*trees)/ft.bagKg), cost=bags*bagPrice;
+  if (currentRubberFertType === 'main') {
+    const afterThis=(accum+perTree)*trees;
+    const annual=RUBBER_FERT_ANNUAL*trees;
+    const remain=Math.max(0,RUBBER_FERT_ANNUAL-accum-perTree);
+    const pct=Math.min(100,annual>0?afterThis/annual*100:0);
+    set('rfz_trees',trees+' ต้น'); set('rfz_total',perTree>0?kg(perTree*trees):'—');
+    set('rfz_bags',bags>0?bags+' กระสอบ 50กก.':'—'); set('rfz_cost',cost>0?thb(cost):'—');
+    set('rfz_before',kg(accum*trees)); set('rfz_after',kg(afterThis));
+    const bar=document.getElementById('rfz_bar'); if(bar) bar.style.width=pct.toFixed(0)+'%';
+    set('rfz_pct',pct.toFixed(0)+'% ของเป้าทั้งปี');
+    const remRow=document.getElementById('rfz_remainRow');
+    if(remain>0){set('rfz_remain',remain.toFixed(1)+' กก./ต้น (รวม '+kg(remain*trees)+')');if(remRow)remRow.style.color='#c0392b';}
+    else{set('rfz_remain','✅ ครบโควต้าแล้ว');if(remRow)remRow.style.color='#3d5c0a';}
+  } else {
+    const unitLabel = currentRubberFertType==='secondary'?'ถุง 25กก.':'ถุง 10กก.';
+    set('rfzs_trees',trees+' ต้น'); set('rfzs_total',perTree>0?kg(perTree*trees):'—');
+    set('rfzs_bags',bags>0?bags+' '+unitLabel:'—'); set('rfzs_cost',cost>0?thb(cost):'—');
+    set('rfzs_perTree',cost>0&&trees>0?thb(cost/trees).replace(' บาท','')+' บาท/ต้น':'—');
+  }
+}
+
+function rubberCalcMaintain() {
+  const w=n('rmtWorkers'),dr=n('rmtDayRate'),d=n('rmtDays')||1,mat=n('rmtMaterial'),mach=n('rmtMachine');
+  const labor=w*dr*d, total=labor+mat+mach;
+  set('rmt_labor',thb(labor)); set('rmt_material',thb(mat));
+  set('rmt_machine',thb(mach)); set('rmt_total',thb(total));
+}
+
+function rubberCalcSpray() {
+  const trees=n('rspTrees'),perTree=n('rspPerTree'),drug=n('rspDrugCost'),labor=n('rspLabor');
+  const totalVol=trees*perTree, total=drug+labor;
+  const type = document.getElementById('rspType').value;
+  set('rsp_title','📊 สรุปการฉีดพ่น'+type);
+  set('rsp_trees',trees>0?trees+' ต้น':'0 ต้น');
+  set('rsp_totalVol',totalVol>0?totalVol.toFixed(1)+' มล. รวม':'—');
+  set('rsp_drug',thb(drug)); set('rsp_labor',thb(labor)); set('rsp_total',thb(total));
+  set('rsp_perTree',trees>0?thb(total/trees).replace(' บาท','')+' บาท/ต้น':'— บาท/ต้น');
+}
+
+function rubberCalcReplant() {
+  const trees=n('rrpTrees'),seedCost=n('rrpSeedCost'),laborRate=n('rrpLaborRate'),mat=n('rrpMaterial');
+  const seedTotal=trees*seedCost, laborTotal=trees*laborRate, total=seedTotal+laborTotal+mat;
+  set('rrp_trees',trees>0?trees+' ต้น':'0 ต้น');
+  set('rrp_seed',thb(seedTotal)); set('rrp_labor',thb(laborTotal));
+  set('rrp_material',thb(mat)); set('rrp_total',thb(total));
+  set('rrp_perTree',trees>0?thb(total/trees).replace(' บาท','')+' บาท/ต้น':'— บาท/ต้น');
+}
+
+// ══════════════════════════════════════════════
+//  RUBBER — POST
+// ══════════════════════════════════════════════
+async function rubberPost() {
+  if (!RUBBER_API_URL) { alert('กรุณาใส่ API URL ยางพาราก่อน'); return; }
+  const el  = document.getElementById('rubberPostResult');
+  el.textContent = 'กำลังส่งข้อมูล...';
+  const act = currentRubberActivity;
+  let revenue=0, cost=0, profit=0, extraNote='';
+
+  if (act === 'tap') {
+    const w=n('rtpWeight'),p=n('rtpPrice'),lr=n('rtpLaborRate'),oth=n('rtpOther');
+    revenue=w*p; cost=w*lr+oth; profit=revenue-cost;
+    extraNote=`กรีด ${w} กก. × ${p} บาท/กก. ค่าแรง ${thb(w*lr)}`;
+  } else if (act === 'fertilize') {
+    const perTree=n('rfzPerTree'),bagPrice=n('rfzBagPrice'),accum=n('rfzAccum');
+    const ft=RUBBER_FERT_TYPES[currentRubberFertType];
+    const bags=Math.ceil((perTree*RUBBER_TREES)/ft.bagKg); cost=bags*bagPrice;
+    if (currentRubberFertType==='main') {
+      const remain=Math.max(0,RUBBER_FERT_ANNUAL-accum-perTree);
+      extraNote=`[${ft.label}] ${perTree} กก./ต้น สะสม ${(accum+perTree).toFixed(1)} คงเหลือ ${remain.toFixed(1)} กก./ต้น`;
+    } else {
+      extraNote=`[${ft.label}] ${perTree} กก./ต้น รวม ${(perTree*RUBBER_TREES).toFixed(1)} กก.`;
+    }
+  } else if (act === 'maintain') {
+    const w=n('rmtWorkers'),dr=n('rmtDayRate'),d=n('rmtDays')||1,mat=n('rmtMaterial'),mach=n('rmtMachine');
+    cost=w*dr*d+mat+mach;
+    extraNote=`${w} คน × ${d} วัน ค่าวัสดุ ${thb(mat)}`;
+  } else if (act === 'spray') {
+    const trees=n('rspTrees'),perTree=n('rspPerTree'),drug=n('rspDrugCost'),labor=n('rspLabor');
+    cost=drug+labor;
+    extraNote=`[${document.getElementById('rspType').value}] ฉีด ${trees} ต้น × ${perTree} มล./ต้น`;
+  } else { // replant
+    const trees=n('rrpTrees'),seedCost=n('rrpSeedCost'),laborRate=n('rrpLaborRate'),mat=n('rrpMaterial');
+    cost=trees*seedCost+trees*laborRate+mat;
+    const variety=document.getElementById('rrpVariety').value;
+    extraNote=`ปลูก ${trees} ต้น${variety?' พันธุ์ '+variety:''} ต้นทุนรวม ${thb(cost)}`;
+  }
+  profit = revenue - cost;
+
+  const body = {
+    action:'addLog',
+    data:{
+      'ประเภทกิจกรรม':          RUBBER_TYPE_LABELS[act],
+      'รหัสแผนงาน (Plan_Ref)':  document.getElementById('rubberPlanRef').value,
+      'น้ำหนักที่ได้จริง (กก.)': act==='tap'?n('rtpWeight'):0,
+      'ราคาขายต่อหน่วย':         act==='tap'?n('rtpPrice'):0,
+      'รายได้รวม (จริง)':        act==='tap'?revenue:0,
+      'ต้นทุนที่จ่ายจริง':       cost,
+      'กำไรสุทธิรอบนี้':          profit,
+      'ผู้บันทึก/คนงาน':          document.getElementById('rubberWorker').value,
+      'วันที่ดำเนินการ':           document.getElementById('rubberDate').value,
+      'หมายเหตุ/รูปภาพ':          [document.getElementById('rubberNote').value, extraNote].filter(Boolean).join(' | '),
+      'ปุ๋ย (กก./ต้น) รอบนี้':   act==='fertilize'?n('rfzPerTree'):0,
+      'ปุ๋ยสะสมแล้ว (กก./ต้น)':  act==='fertilize'?(n('rfzAccum')+n('rfzPerTree')):0,
+      'ปุ๋ยคงเหลือ (กก./ต้น)':   act==='fertilize'?Math.max(0,RUBBER_FERT_ANNUAL-n('rfzAccum')-n('rfzPerTree')):0,
+      'กระสอบปุ๋ยที่ใช้':         act==='fertilize'?Math.ceil((n('rfzPerTree')*RUBBER_TREES)/(RUBBER_FERT_TYPES[currentRubberFertType]?.bagKg||50)):0,
+      'ประเภทยา/สารเคมี':         act==='spray'?document.getElementById('rspType').value:'',
+      'ปริมาณยา (มล./ต้น)':       act==='spray'?n('rspPerTree'):0,
+      'จำนวนต้นที่ดำเนินการ':     act==='spray'?n('rspTrees'):(act==='replant'?n('rrpTrees'):0),
+      'ค่าแรง/ต้น (บาท)':         act==='replant'?n('rrpLaborRate'):0,
+    }
+  };
+
+  try {
+    const res  = await fetch(RUBBER_API_URL, {method:'POST', body:JSON.stringify(body)});
+    const json = await res.json();
+    el.textContent = JSON.stringify(json, null, 2);
+    if (json.status === 'ok') {
+      el.textContent += `\n\n✅ บันทึกสำเร็จ! Log ID: ${json.logId}`;
+      el.textContent += `\nประเภท  : ${RUBBER_TYPE_LABELS[act]}`;
+      if (act==='tap') { el.textContent += `\nน้ำหนัก : ${n('rtpWeight')} กก.\nรายได้  : ฿${thb(revenue)}\nกำไร    : ฿${thb(profit)}`; }
+      else { el.textContent += `\nต้นทุน  : ฿${thb(cost)}\nรายได้  : — (กิจกรรมต้นทุน)`; }
+      // อัปโหลดรูป
+      const photoInput = document.getElementById('rubberPhotoInput');
+      if (photoInput.files.length > 0) {
+        el.textContent += '\n\n📷 กำลังอัปโหลดรูปภาพ...';
+        try {
+          const pr = await uploadPhoto('rubber', json.logId);
+          el.textContent += pr?.status==='ok' ? `\n✅ อัปโหลดรูปสำเร็จ!\n🔗 ${pr.url}` : `\n⚠️ อัปโหลดรูปไม่สำเร็จ`;
+          if (pr?.status==='ok') { photoInput.value=''; document.getElementById('rubberPhotoPreview').style.display='none'; }
+        } catch(pe) { el.textContent += '\n⚠️ ' + pe.message; }
+      }
+    }
+  } catch(e) { el.textContent = 'Error: ' + e.message; }
+}
+</script>
+</body>
+</html>
